@@ -95,12 +95,12 @@ DefTrainer TrainerGenerator::Generate(const DefTrainer & from)
 			filterListN = _countof(GameInfo::PokemonIds);
 		}
 
-		for (int i = 0; i < filterListN; i++) {
-			if (!stayCloseToBST || FilterPokemonByBST(filterList[i], minBst, maxBst)) {
+		for (int j = 0; j < filterListN; j++) {
+			if (!stayCloseToBST || FilterPokemonByBST(filterList[j], minBst, maxBst)) {
 				bool used = false;
-				for (int j = 0; j < i; j++) used |= ret.pokemon[j].species == filterList[i];
+				for (int k = 0; k < i; k++) used |= ret.pokemon[k].species == filterList[j];
 				if (!used) {
-					validSpecies[validSpeciesN++] = filterList[i];
+					validSpecies[validSpeciesN++] = filterList[j];
 				}
 			}
 		}
