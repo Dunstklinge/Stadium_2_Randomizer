@@ -1,0 +1,178 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Structures">
+      <UniqueIdentifier>{0e376230-7d83-4bb7-83db-f2c29f29db12}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tables">
+      <UniqueIdentifier>{c9472f80-c8c2-4a0d-9e48-ed639ca1476c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Generators">
+      <UniqueIdentifier>{f3125a00-d574-49e9-81aa-4708fb8d1c65}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Configs">
+      <UniqueIdentifier>{46b0afc8-7ed9-4939-81c3-d36148d2d88e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="GUI">
+      <UniqueIdentifier>{fc9bd96f-6dac-4fff-88d2-6ca02b785b1e}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DefPokemon.cpp">
+      <Filter>Structures</Filter>
+    </ClCompile>
+    <ClCompile Include="DefTrainer.cpp">
+      <Filter>Structures</Filter>
+    </ClCompile>
+    <ClCompile Include="Util.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MoveTable.cpp">
+      <Filter>Tables</Filter>
+    </ClCompile>
+    <ClCompile Include="PokemonTable.cpp">
+      <Filter>Tables</Filter>
+    </ClCompile>
+    <ClCompile Include="Constants.cpp">
+      <Filter>Tables</Filter>
+    </ClCompile>
+    <ClCompile Include="DefRoster.cpp">
+      <Filter>Structures</Filter>
+    </ClCompile>
+    <ClCompile Include="TextMods.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DefText.cpp">
+      <Filter>Structures</Filter>
+    </ClCompile>
+    <ClCompile Include="ItemTable.cpp">
+      <Filter>Tables</Filter>
+    </ClCompile>
+    <ClCompile Include="GlobalRandom.cpp">
+      <Filter>Generators</Filter>
+    </ClCompile>
+    <ClCompile Include="PokemonGenerator.cpp">
+      <Filter>Generators</Filter>
+    </ClCompile>
+    <ClCompile Include="TrainerGenerator.cpp">
+      <Filter>Generators</Filter>
+    </ClCompile>
+    <ClCompile Include="PokemonNicknames.cpp">
+      <Filter>Configs</Filter>
+    </ClCompile>
+    <ClCompile Include="TrainerNames.cpp">
+      <Filter>Configs</Filter>
+    </ClCompile>
+    <ClCompile Include="GlobalConfigs.cpp">
+      <Filter>Configs</Filter>
+    </ClCompile>
+    <ClCompile Include="stdafx.cpp" />
+    <ClCompile Include="CMain.cpp">
+      <Filter>GUI</Filter>
+    </ClCompile>
+    <ClCompile Include="CMainDialog.cpp">
+      <Filter>GUI</Filter>
+    </ClCompile>
+    <ClCompile Include="Filters.cpp">
+      <Filter>Configs</Filter>
+    </ClCompile>
+    <ClCompile Include="Crc.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="DefPokemon.h">
+      <Filter>Structures</Filter>
+    </ClInclude>
+    <ClInclude Include="DefTrainer.h">
+      <Filter>Structures</Filter>
+    </ClInclude>
+    <ClInclude Include="Util.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ItemTable.h">
+      <Filter>Tables</Filter>
+    </ClInclude>
+    <ClInclude Include="PokemonTable.h">
+      <Filter>Tables</Filter>
+    </ClInclude>
+    <ClInclude Include="MoveTable.h">
+      <Filter>Tables</Filter>
+    </ClInclude>
+    <ClInclude Include="Tables.h">
+      <Filter>Tables</Filter>
+    </ClInclude>
+    <ClInclude Include="Constants.h">
+      <Filter>Tables</Filter>
+    </ClInclude>
+    <ClInclude Include="DefRoster.h">
+      <Filter>Structures</Filter>
+    </ClInclude>
+    <ClInclude Include="DefGenTable.h">
+      <Filter>Structures</Filter>
+    </ClInclude>
+    <ClInclude Include="DefText.h">
+      <Filter>Structures</Filter>
+    </ClInclude>
+    <ClInclude Include="TextMods.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GlobalRandom.h">
+      <Filter>Generators</Filter>
+    </ClInclude>
+    <ClInclude Include="PokemonGenerator.h">
+      <Filter>Generators</Filter>
+    </ClInclude>
+    <ClInclude Include="TrainerGenerator.h">
+      <Filter>Generators</Filter>
+    </ClInclude>
+    <ClInclude Include="PokemonNicknames.h">
+      <Filter>Configs</Filter>
+    </ClInclude>
+    <ClInclude Include="TrainerNames.h">
+      <Filter>Configs</Filter>
+    </ClInclude>
+    <ClInclude Include="GlobalConfigs.h">
+      <Filter>Configs</Filter>
+    </ClInclude>
+    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="CMain.h">
+      <Filter>GUI</Filter>
+    </ClInclude>
+    <ClInclude Include="CMainDialog.h">
+      <Filter>GUI</Filter>
+    </ClInclude>
+    <ClInclude Include="Filters.h">
+      <Filter>Configs</Filter>
+    </ClInclude>
+    <ClInclude Include="Crc.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="FormatNotes.txt">
+      <Filter>Structures</Filter>
+    </Text>
+    <Text Include="MoveRawData.txt">
+      <Filter>Tables</Filter>
+    </Text>
+    <Text Include="PokemonRawData.txt">
+      <Filter>Tables</Filter>
+    </Text>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Stadium2Randomizer.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+</Project>

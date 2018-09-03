@@ -1,0 +1,123 @@
+The Repo where i got these infos from (https://github.com/pret/pokestadium/blob/master/stadiumgs) had all the neccesary information, but not exactly in an easily readable way. Information had to be scrambled together from multiple parts of the repo, like main.s for offsets, util programs for file format, and then the results had to be cross referenced to get the offsets of individual cups.
+
+This file lists important information that was gathered this way.
+
+//////////////////////////
+
+Roster tables:
+
+the first 5 tables are rentals in this order:
+
+0: Little Cup rentals, offset 490 (#1168)
+1: Prime Cup, offset CB0 (#3248)
+2: Prime Cup round 2 (same but with celeby), offset 23D0 (#9168)
+3: Poke Cup, offset 3B20 (#15136)
+4: Poke Cup again (same exact table, referenced twice - gym castle? maybe this was supposed to be Poke Cup r2?)
+
+the rest are trainer definitions:
+
+0: unknown, offset: 5240(#21056)
+1: unknown, offset: 55e0(#21984)
+2: poke cup r1 pokeball, offset: 5b40(#23360)
+3: poke cup r1 greatball, offset: 6010(#24592)
+4: poke cup r1 ultraball, offset: 64e0(#25824)
+5: poke cup r1 masterball, offset: 69b0(#27056)
+6: littlecup r1, offset: 6e80(#28288)
+7: prime cup r1, offset: 7350(#29520)
+
+8: falkner gym r1, offset: 7820(#30752)
+9: bugsy gym r1, offset: 7960(#31072)
+10: whitney gym r1, offset: 7b30(#31536)
+11: morty gym r1, offset: 7d00(#32000)
+12: chuck gym r1, offset: 7ed0(#32464)
+13: jasmine gym r1, offset: 8010(#32784)
+14: rocket assault r1, offset: 80b0(#32944)
+15: price gym r1, offset: 8320(#33568)
+16: clair gym r1, offset: 84f0(#34032)
+17: elite 4 r1, offset: 86c0(#34496)
+18: lance r1, offset: 8930(#35120)
+19: surge r1, offset: 89d0(#35280)
+20: sabrina r1, offset: 8a70(#35440)
+21: misty r1, offset: 8b10(#35600)
+22: erika r1, offset: 8bb0(#35760)
+23: janine r1, offset: 8c50(#35920)
+24: brock r1, offset: 8cf0(#36080)
+25: blaine r1, offset: 8d90(#36240)
+26: blue r1, offset: 8e30(#36400)
+27: red r1, offset: 8ed0(#36560)
+
+28: rival r1, offset: 8f70(#36720)
+
+29: poke cup r2 pokeball, offset: 9010(#36880)
+30: poke cup r2 greatball, offset: 94e0(#38112)
+31: poke cup r2 ultraball, offset: 99b0(#39344)
+32: poke cup r2 masterball, offset: 9e80(#40576)
+33: little cup r2, offset: a350(#41808)
+34: prime cup r2, offset: a820(#43040)
+
+35: falkner gym r2, offset: acf0(#44272)
+36: bugsy gym r2, offset: ae30(#44592)
+37: whitney gym r2, offset: b000(#45056)
+38: morty gym r2, offset: b1d0(#45520)
+39: chuck gym r2, offset: b3a0(#45984)
+40: jasmine gym r2, offset: b4e0(#46304)
+41: rocket assault r2, offset: b580(#46464)
+42: price gym r2, offset: b7f0(#47088)
+43: clair gym r2, offset: b9c0(#47552)
+44: elite 4 r2, offset: bb90(#48016)
+45: lance r2, offset: be00(#48640)
+46: surge r2, offset: bea0(#48800)
+47: sabrina r2, offset: bf40(#48960)
+48: misty r2, offset: bfe0(#49120)
+49: erika r2, offset: c080(#49280)
+50: janine r2, offset: c120(#49440)
+51: brock r2, offset: c1c0(#49600)
+52: blaine r2, offset: c260(#49760)
+53: blue r2, offset: c300(#49920)
+54: red r2, offset: c3a0(#50080)
+
+55: rival r2, offset: c440(#50240)
+
+56: challenge cup r1 pokeball, offset: c4e0(#50400)
+57: challenge cup r1 greatball, offset: c9b0(#51632)
+58: challenge cup r1 ultraball, offset: ce80(#52864)
+59: challenge cup r1 masterball, offset: d350(#54096)
+60: challenge cup r2 pokeball, offset: d820(#55328)
+61: challenge cup r2 greatball, offset: dcf0(#56560)
+62: challenge cup r2 ultraball, offset: e1c0(#57792)
+63: challenge cup r2 masterball, offset: e690(#59024)
+
+64: pokemon academy class 1, offset: eb60(#60256)
+65: pokemon academy class 2, offset: f3c0(#62400)
+66: pokemon academy class 3, offset: f9c0(#63936)
+
+
+//////////////////
+text:
+
+the text ids in the trainers refer to the text table, but with an offset:
+trainer text ids start at the 4Dth entry (entry with index 4C).
+each of these text entrys have 40 lines (max index 39).
+the 7th to 2th last lines (index 33-38) are the nicknames, if applicable, or empty if no nicknames are there
+
+trainer names are in the table at the 2Bth entry (index 2A).
+this table is simply a list of names, where the first name [0] is trainer id 1!
+
+
+//////////////////////////////////////
+
+gotcha: d9683, total dist 278; currDists: 7, f, f, f, f,
+
+that means offsets are:
+D963B (AD)
+D9643 (4F)
+D9653 (4E)
+D9663 (50)
+D9673 (54)
+D9683 (53)
+
+after a billion hours of guessing values in vain, followed by billion hours of disassembling the dynamically 
+compiled x86 code of mupen64 i realized that the 6 default items are hardcoded in mips instructions and not 
+saved as a table or some shit.
+that means 6 items is the limit. shit.
+to make things worse, this code is within the checksum range, so ill have to find out how to calc these too
