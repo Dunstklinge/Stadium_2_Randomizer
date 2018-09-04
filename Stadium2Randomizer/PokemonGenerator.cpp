@@ -3,10 +3,38 @@
 #include "Constants.h"
 #include "Tables.h"
 #include "GlobalRandom.h"
+#include "GeneratorUtil.h"
 
 
 PokemonGenerator::PokemonGenerator()
 {
+	changeSpecies = true;
+	changeEvsIvs = true;
+	changeLevel = true;
+	changeMoves = true;
+	changeItem = true;
+
+	speciesFilter = nullptr;
+	speciesFilterBuffer = nullptr;
+
+	minLevel = 100;
+	maxLevel = 100;
+	levelUniformDistribution = true;
+
+	itemFilter = nullptr;
+	itemFilterBuffer = nullptr;
+	includeTypeSpeciesSpecific = false;
+
+	minOneMoveFilter = nullptr;
+	minOneMoveFilterBuffer = nullptr;
+
+	generalMoveFilter = nullptr;
+	generalMoveFilterBuffer = nullptr;
+
+	randEvs = true;
+	randIvs = true;
+	bstEvIvs = true;
+	statsUniformDistribution = false;
 }
 
 
@@ -273,10 +301,69 @@ void PokemonGenerator::GenMoves(DefPokemon & mon)
 void PokemonGenerator::GenItem(DefPokemon & mon)
 {
 
+	union {
+		struct {
+			GameInfo::ItemId speciesItem;
+			GameInfo::ItemId typeItem1;
+			GameInfo::ItemId typeItem2;
+		};
+		GameInfo::ItemId items[3];
+	} extraItems;
+	extraItems.speciesItem = GameInfo::SpeciesBattleItemMap[mon.species];
+	extraItems.typeItem1 = GameInfo::TypeBattleItemMap[GameInfo::Pokemons[mon.species].type1];
+	extraItems.typeItem2 = GameInfo::TypeBattleItemMap[GameInfo::Pokemons[mon.species].type2];
+	
+	int includeItemsIgnore = 0; //bitfield, bit 1 ,2 ,3 for species, type1, type2
+	if (extraItems.speciesItem == GameInfo::NO_ITEM) includeItemsIgnore |= 1;
+	if (extraItems.typeItem1 == GameInfo::NO_ITEM) includeItemsIgnore |= 2;
+	if (extraItems.typeItem2 == GameInfo::NO_ITEM) includeItemsIgnore |= 4;
+	if (extraItems.typeItem1 == extraItems.typeItem2) includeItemsIgnore |= 4; //in case of mono type pokemon
 
+	unsigned int legalItemsN = 0;
+	static GameInfo::ItemId legalItems[256];
+	const GameInfo::ItemId* itemList;
+	unsigned int itemListN;
+
+	FilterBufferGenerateOrDefault(&itemList, &itemListN,
+						legalItems, legalItemsN,
+						GameInfo::ExistingItemMap, _countof(GameInfo::ExistingItemMap),
+						itemFilterBuffer, itemFilterBufferN,
+						&[&](GameInfo::ItemId iId) {
+		if (extraItems.speciesItem == iId) includeItemsIgnore |= 1;
+		if (extraItems.typeItem1 == iId) includeItemsIgnore |= 2;
+		if (extraItems.typeItem2 == iId) includeItemsIgnore |= 4;
+		if (itemFilter) return itemFilter(iId, mon.species); 
+		return false;
+	});
+
+
+	if (includeTypeSpeciesSpecific) {
+		//try drawing type or species specific item
+		unsigned int addN = 3 - 
+			((includeItemsIgnore & 1) + (includeItemsIgnore & 2) >> 1 + (includeItemsIgnore & 4) >> 2);
+		if (addN > 0) {
+			std::uniform_int_distribution<int> dist(0, (int)itemListN - 1 + addN);
+			int rand = dist(Random::Generator);
+			if (rand > (int)itemListN - 1) {
+				unsigned int useAddN = rand - (int)itemListN - 1;
+				for (int i = 0; i < 3; i++) {
+					if (((1 << i) & includeItemsIgnore) && useAddN-- == 0) {
+						mon.item = extraItems.items[i];
+						return;
+					}
+				}
+			}
+		}
+		
+	}
+	
+	std::uniform_int_distribution<int> dist(0, (int)itemListN - 1);
+	mon.item = itemList[dist(Random::Generator)];
+	return;
+	
+
+	/*
 	if (itemFilter) {
-		unsigned int legalItemsN = 0;
-		GameInfo::ItemId legalItems[256];
 		for (int i = 0; i <= _countof(GameInfo::ExistingItemMap); i++) {
 			if (itemFilter(GameInfo::ExistingItemMap[i], mon.species)) {
 				legalItems[legalItemsN++] = (GameInfo::ItemId)i;
@@ -298,5 +385,5 @@ void PokemonGenerator::GenItem(DefPokemon & mon)
 		std::uniform_int_distribution<int> dist(0, (int)_countof(GameInfo::ExistingItemMap)-1);
 		mon.item = GameInfo::ExistingItemMap[dist(Random::Generator)];
 		return;
-	}
+	}*/
 }

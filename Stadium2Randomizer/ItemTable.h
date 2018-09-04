@@ -19,4 +19,6 @@ namespace GameInfo {
 	//array[DITTO] = METALPOWDER etc
 	extern ItemId SpeciesBattleItemMap[256];
 
+	//array[TYPE] = nevermeltice
+	extern ItemId TypeBattleItemMap[32];
 };

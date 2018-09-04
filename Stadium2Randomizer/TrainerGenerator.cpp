@@ -3,6 +3,7 @@
 #include "GlobalRandom.h"
 #include "GlobalConfigs.h"
 #include "Filters.h"
+#include "GeneratorUtil.h"
 
 TrainerGenerator::TrainerGenerator()
 {
@@ -22,7 +23,6 @@ TrainerGenerator::TrainerGenerator()
 	usefulItem = false;
 	stayCloseToBST = true;
 	stayCloseToBSTThreshold = 50;
-	usefulAttacks = true;
 	//minOneMove = NONE;
 }
 
@@ -43,10 +43,12 @@ DefTrainer TrainerGenerator::Generate(const DefTrainer & from)
 		gen.itemFilter = nullptr;
 		gen.itemFilterBuffer = GameInfo::GeneralBattleItemMap;
 		gen.itemFilterBufferN = _countof(GameInfo::GeneralBattleItemMap);
+		gen.includeTypeSpeciesSpecific = true;
 	}
 	else {
 		gen.itemFilter = nullptr;
 		gen.itemFilterBuffer = nullptr;
+		gen.includeTypeSpeciesSpecific = false;
 	}
 
 
@@ -84,6 +86,9 @@ DefTrainer TrainerGenerator::Generate(const DefTrainer & from)
 		GameInfo::PokemonId validSpecies[256];
 		unsigned int validSpeciesN = 0;
 
+		
+							
+		
 		const GameInfo::PokemonId* filterList;
 		unsigned int filterListN;
 		if (gen.speciesFilterBuffer) {
@@ -114,31 +119,6 @@ DefTrainer TrainerGenerator::Generate(const DefTrainer & from)
 
 		auto oldOneMoveFilter = gen.minOneMoveFilter;
 
-		if (usefulAttacks) {
-			
-			using namespace std::placeholders;
-			switch (ret.trainerCat) {
-			case GameInfo::GYM_LEADER:
-			case GameInfo::CHAMPION:
-			case GameInfo::RIVAL:
-			case GameInfo::RIVAL17:
-			case GameInfo::POKEMON_TRAINER:
-				if (ret.trainerCat != GameInfo::POKEMON_TRAINER || ret.trainerId - 1 == TableInfo::RED) {
-					if (gen.minOneMoveFilter == nullptr) {
-						gen.minOneMoveFilter = std::bind(FilterMoveByBP, _1, 60, 999);
-					}
-					else {
-						gen.minOneMoveFilter = std::bind(std::logical_and<bool>(), 
-									std::bind(gen.minOneMoveFilter, _1, _2),
-									std::bind(&FilterMoveByBP, _1, 60, 999));
-					}
-					
-				}
-				
-				break;
-			}
-		}
-		
 
 		newPoke = gen.Generate(ret.pokemon[i]);
 		ret.pokemon[i] = newPoke;

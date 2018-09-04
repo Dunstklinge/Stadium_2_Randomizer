@@ -40,6 +40,7 @@ public:
 	std::function<bool(GameInfo::ItemId, GameInfo::PokemonId)> itemFilter = nullptr;
 	const GameInfo::ItemId* itemFilterBuffer = nullptr;
 	unsigned int itemFilterBufferN;
+	bool includeTypeSpeciesSpecific;
 
 	//bool (*minOneMoveFilter)(GameInfo::MoveId move, GameInfo::PokemonId mon) = nullptr;
 	std::function<bool(GameInfo::MoveId, GameInfo::PokemonId)> minOneMoveFilter = nullptr;

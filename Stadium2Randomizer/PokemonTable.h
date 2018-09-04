@@ -15,7 +15,7 @@ namespace GameInfo {
 		uint8_t baseSpA;
 		uint8_t baseSpD;
 		uint8_t type1;
-		uint8_t type2;
+		uint8_t type2; //for single types, both types are the same here
 		uint8_t genderRatio;
 		uint8_t unknowns[12];
 

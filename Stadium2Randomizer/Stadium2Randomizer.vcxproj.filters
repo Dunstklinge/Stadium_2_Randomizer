@@ -158,6 +158,9 @@
       <Filter>Configs</Filter>
     </ClInclude>
     <ClInclude Include="Crc.h" />
+    <ClInclude Include="GeneratorUtil.h">
+      <Filter>Generators</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="FormatNotes.txt">

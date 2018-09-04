@@ -164,6 +164,7 @@
     <ClInclude Include="DefText.h" />
     <ClInclude Include="DefTrainer.h" />
     <ClInclude Include="Filters.h" />
+    <ClInclude Include="GeneratorUtil.h" />
     <ClInclude Include="GlobalConfigs.h" />
     <ClInclude Include="GlobalRandom.h" />
     <ClInclude Include="ItemTable.h" />

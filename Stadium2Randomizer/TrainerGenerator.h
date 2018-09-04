@@ -16,7 +16,6 @@ public:
 	bool changePokemonNicknames;
 	bool stayCloseToBST;
 	unsigned int stayCloseToBSTThreshold;
-	bool usefulAttacks;
 
 	int minLevel;
 	int maxLevel;
