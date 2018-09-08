@@ -13,6 +13,7 @@ PokemonGenerator::PokemonGenerator()
 	changeLevel = true;
 	changeMoves = true;
 	changeItem = true;
+	changeHappiness = true;
 
 	speciesFilter = nullptr;
 	speciesFilterBuffer = nullptr;
@@ -49,6 +50,7 @@ DefPokemon PokemonGenerator::Generate()
 	GenSpecies(mon);
 	GenLevel(mon);
 	GenEvsIvs(mon);
+	GenHappiness(mon);
 	GenMoves(mon);
 	GenItem(mon);
 
@@ -62,6 +64,7 @@ DefPokemon PokemonGenerator::Generate(GameInfo::PokemonId species)
 	mon.species = species;
 	GenLevel(mon);
 	GenEvsIvs(mon);
+	GenHappiness(mon);
 	GenMoves(mon);
 	GenItem(mon);
 
@@ -78,6 +81,8 @@ DefPokemon PokemonGenerator::Generate(const DefPokemon & from)
 		GenLevel(mon);
 	if(changeEvsIvs)
 		GenEvsIvs(mon);
+	if(changeHappiness)
+		GenHappiness(mon);
 	if(changeMoves)
 		GenMoves(mon);
 	if (changeItem)
@@ -219,6 +224,12 @@ void PokemonGenerator::GenEvsIvs(DefPokemon & mon)
 		}
 	}
 	
+}
+
+void PokemonGenerator::GenHappiness(DefPokemon& mon) 
+{
+	std::uniform_int_distribution<int> dist(0, 0xFF);
+	mon.happiness = dist(Random::Generator);
 }
 
 void PokemonGenerator::GenMoves(DefPokemon & mon)

@@ -23,6 +23,7 @@ public:
 	bool changeLevel;
 	bool changeMoves;
 	bool changeItem;
+	bool changeHappiness;
 
 	/* new generation info */ 
 	
@@ -66,7 +67,9 @@ private:
 	void GenSpecies(DefPokemon& mon);
 	void GenLevel(DefPokemon& mon);
 	void GenEvsIvs(DefPokemon& mon);
+	void GenHappiness(DefPokemon& mon);
 	void GenMoves(DefPokemon& mon);
 	void GenItem(DefPokemon& mon);
+
 };
 
