@@ -229,7 +229,7 @@ namespace GameInfo {
 	};
 
 
-	ItemId BattleItemMap[38] = {
+	ItemId BattleItemMap[] = {
 		LUCKY_PUNCH,
 		METAL_POWDER,
 		QUICK_CLAW,
@@ -271,7 +271,7 @@ namespace GameInfo {
 
 	};
 
-	ItemId NonPokemonBattleItemMap[33]{
+	ItemId NonPokemonBattleItemMap[]{
 		QUICK_CLAW,
 		PSNCUREBERRY,
 		SOFT_SAND,
@@ -306,7 +306,7 @@ namespace GameInfo {
 		BERRY,
 		GOLD_BERRY,
 	};
-	ItemId GeneralBattleItemMap[17]{
+	ItemId GeneralBattleItemMap[]{
 		QUICK_CLAW,
 		PSNCUREBERRY,
 		PRZCUREBERRY,
@@ -583,7 +583,7 @@ namespace GameInfo {
 	};
 
 
-	ItemId TypeBattleItemMap[32] {
+	ItemId TypeBattleItemMap[] {
 		PINK_BOW,
 		BLACKBELT,
 		SHARP_BEAK,

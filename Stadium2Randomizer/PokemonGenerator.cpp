@@ -268,7 +268,7 @@ void PokemonGenerator::GenMoves(DefPokemon & mon)
 		static unsigned int legalMovesN;
 		static GameInfo::MoveId legalMoves[256];
 		legalMovesN = 0;
-		for (unsigned int i = 0; i <= baseMoveListN; i++) {
+		for (unsigned int i = 0; i < baseMoveListN; i++) {
 			GameInfo::MoveId move = baseMoveList[i];
 			if (minOneMoveFilter(move, mon.species)) {
 				legalMoves[legalMovesN++] = move;

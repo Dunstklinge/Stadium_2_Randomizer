@@ -4,7 +4,7 @@
 
 namespace GameInfo {
 
-	MoveId MoveIdList[251] = {
+	MoveId MoveIdList[] = {
 		POUND,
 		KARATE_CHOP,
 		DOUBLESLAP,

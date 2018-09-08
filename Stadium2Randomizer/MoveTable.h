@@ -20,7 +20,7 @@ namespace GameInfo {
 		#include "MoveRawData.txt" 
 	};
 	
-	extern MoveId MoveIdList[251];
+	extern MoveId MoveIdList[250];
 
 	extern Move Moves[256];
 
