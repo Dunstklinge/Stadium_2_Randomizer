@@ -31,7 +31,7 @@ namespace GameInfo {
 
 	extern Pokemon Pokemons[256];
 
-	extern PokemonId PokemonIds[256];
+	extern PokemonId PokemonIds[251];
 
 	void InitPokemonTable();
 }

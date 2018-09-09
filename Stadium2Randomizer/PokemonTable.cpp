@@ -13,7 +13,7 @@ namespace GameInfo {
 		memcpy(Pokemons+1, PokemonRawData, sizeof(PokemonRawData));
 	}
 
-	PokemonId PokemonIds[256]{
+	PokemonId PokemonIds[]{
 		BULBASAUR,
 		IVYSAUR,
 		VENUSAUR,
