@@ -145,84 +145,94 @@ void PokemonGenerator::GenLevel(DefPokemon& mon)
 
 void PokemonGenerator::GenEvsIvs(DefPokemon & mon)
 {
+	unsigned int minEv = 0;
+	unsigned int maxEv = 0xFFFF;
+	unsigned int minIv = 0;
+	unsigned int maxIv = 15;
+
 	if (bstEvIvs) {
+		constexpr double maxEvRange = 0.6; //in percent from ffff range
+		constexpr double maxIvRange = 0.5;
+
 		SatUAr bst = GameInfo::Pokemons[mon.species].CalcBST();
-		//200 bst should always be FFFF, 680bst should always be 0. note: 136.53125 * 480 = 0xFFFF
-		SatUAr<unsigned int> max = (680u - (bst - 200u + 200u)) * 136.53125;
-		//200 and 680 should have 0 derivation, while towards the middle (440) derivation should be high
-		constexpr double maxDerivation = 0.6;
-		unsigned int derivation = (240 - std::abs(240 - (int)(bst - 200u))) * (maxDerivation * 0xFFFF / 240.0);
-		unsigned int minEv = max - derivation;
-		unsigned int maxEv = max;
-		if (statsUniformDistribution || minEv == maxEv) {
-			std::uniform_int_distribution<int> dist(minEv, maxEv);
-			mon.evHp = dist(Random::Generator);
-			mon.evAtk = dist(Random::Generator);
-			mon.evDef = dist(Random::Generator);
-			mon.evSpd = dist(Random::Generator);
-			mon.evSpc = dist(Random::Generator);
-
+		SatUAr shiftedBst = std::clamp(bst.t, 200u, 680u) - 200; //from 0 to 480
+		//200 bst should always be FFFF, 680bst should always be 0.
+		if constexpr (false) {
+			//round: 200 and 680 should have 0 derivation, while towards the middle (440) deviation should be high
+			//EVs
+			{
+				SatUAr<unsigned int> max = (480u - shiftedBst) * 136.53125; //note: 136.53125 * 480 = 0xFFFF
+				unsigned int deviation = (240 - std::abs(240 - (int)shiftedBst)) * (maxEvRange * 0xFFFF / 240.0);
+				maxEv = max;
+				minEv = max - deviation;
+			}
+			//IVs
+			{
+				SatUAr<unsigned int> max = (480u - shiftedBst) * 0.03125;
+				unsigned int deviation = (240 - std::abs(240 - (int)(bst - 200u))) * (maxIvRange * 15 / 240.0);
+				maxIv = max;
+				minIv = max - deviation;
+			}
 		}
 		else {
-			double percent = 0xFFFF / 2 / 9000;
-			std::normal_distribution<double> gdist((maxEv - minEv) / 2, (maxEv - minEv) / 2 * percent);
+			//EVs
+			{
+				//create a parallelogram-shape on the bst/ev graph:
+				//area size always N, but 0=[0xFFFF,0xFFFF+N] und 480=[0-N,0] clamped to [0,FFFF]
+				constexpr double N = maxEvRange * 0xFFFF;
+				//max line: b=0xFFFF+N, m = -(N/480) -(4369/32)
+				constexpr double fMaxB = 0xFFFF + N;
+				constexpr double fMaxM = -(N / 480) - (4369.0 / 32.0);
+				maxEv = std::clamp<int>(fMaxM * shiftedBst + fMaxB, 0, 0xFFFF);
+				minEv = std::clamp<int>(fMaxM * shiftedBst + fMaxB - N, 0, 0xFFFF);
+			}
+			//same for IVs, but 0xFFFF is just 0xF
+			{
+				constexpr double N = maxEvRange * 0xF;
+				constexpr double fMaxB = 0xF + N;
+				constexpr double fMaxM = -(N / 480) - (1.0 / 32.0);
+				maxIv = std::clamp<int>(fMaxM * shiftedBst + fMaxB, 0, 0xF);
+				minIv = std::clamp<int>(fMaxM * shiftedBst + fMaxB - N, 0, 0xF);
+			}
+		}
 
-			mon.evHp = std::clamp((int)std::round(gdist(Random::Generator)), 0, 0xFFFF);
-			mon.evAtk = std::clamp((int)std::round(gdist(Random::Generator)), 0, 0xFFFF);
-			mon.evDef = std::clamp((int)std::round(gdist(Random::Generator)), 0, 0xFFFF);
-			mon.evSpd = std::clamp((int)std::round(gdist(Random::Generator)), 0, 0xFFFF);
-			mon.evSpc = std::clamp((int)std::round(gdist(Random::Generator)), 0, 0xFFFF);
+	}
 
-		}
-		SatUAr<unsigned int> maxIv = (680u - bst) * 0.03125;
-		derivation = (240 - std::abs(240 - (int)(bst - 200u))) * (maxDerivation * 15 / 240.0);
-		unsigned int minIv = maxIv - derivation;
-		if (statsUniformDistribution || minIv == maxIv) {
-			std::uniform_int_distribution<int> dist(minIv, maxIv);
-			int dvs[4];
-			for (int i = 0; i < 4; i++) dvs[i] = dist(Random::Generator);
-			mon.dvs = dvs[0] | (dvs[1] << 4) | (dvs[2] << 8) | (dvs[3] << 12);
-		}
-		else {
-			double percent = 0xFFFF / 2 / 9000;
-			std::normal_distribution<double> dvdist((maxEv - minEv) / 2, (maxEv - minEv) / 2 * percent);
-			int dvs[4];
-			for (int i = 0; i < 4; i++) dvs[i] = std::clamp((int)std::round(dvdist(Random::Generator)), 0, 15);
-			mon.dvs = dvs[0] | (dvs[1] << 4) | (dvs[2] << 8) | (dvs[3] << 12);
-		}
+	if (statsUniformDistribution || minEv == maxEv) {
+		std::uniform_int_distribution<int> dist(minEv, maxEv);
+		mon.evHp = dist(Random::Generator);
+		mon.evAtk = dist(Random::Generator);
+		mon.evDef = dist(Random::Generator);
+		mon.evSpd = dist(Random::Generator);
+		mon.evSpc = dist(Random::Generator);
+
 	}
 	else {
-		if (statsUniformDistribution) {
-			std::uniform_int_distribution<int> dist(0, 0xFFFF);
-			mon.evHp = dist(Random::Generator);
-			mon.evAtk = dist(Random::Generator);
-			mon.evDef = dist(Random::Generator);
-			mon.evSpd = dist(Random::Generator);
-			mon.evSpc = dist(Random::Generator);
+		double nStandardDists = 0xFFFF / 2.0 / 9000;
+		discrete_normal_distribution gdist(minEv, maxEv, nStandardDists);
 
-		}
-		else {
-			double percent = 0xFFFF / 2 / 9000;
-			std::normal_distribution<double> gdist(0x7FFF, 9000);
+		mon.evHp = gdist(Random::Generator);
+		mon.evAtk = gdist(Random::Generator);
+		mon.evDef = gdist(Random::Generator);
+		mon.evSpd = gdist(Random::Generator);
+		mon.evSpc = gdist(Random::Generator);
 
-			mon.evHp = std::clamp((int)std::round(gdist(Random::Generator)), 0, 0xFFFF);
-			mon.evAtk = std::clamp((int)std::round(gdist(Random::Generator)), 0, 0xFFFF);
-			mon.evDef = std::clamp((int)std::round(gdist(Random::Generator)), 0, 0xFFFF);
-			mon.evSpd = std::clamp((int)std::round(gdist(Random::Generator)), 0, 0xFFFF);
-			mon.evSpc = std::clamp((int)std::round(gdist(Random::Generator)), 0, 0xFFFF);
-
-		}
-		if (statsUniformDistribution) {
-			std::uniform_int_distribution<int> dist(0, 0xFFFF);
-			mon.dvs = dist(Random::Generator);
-		}
-		else {
-			std::binomial_distribution dvdist(15, 0.5);
-			int dvs[4];
-			for (int i = 0; i < 4; i++) dvs[i] = dvdist(Random::Generator);
-			mon.dvs = dvs[0] | (dvs[1] << 4) | (dvs[2] << 8) | (dvs[3] << 12);
-		}
 	}
+		
+	if (statsUniformDistribution || minIv == maxIv) {
+		std::uniform_int_distribution<int> dist(minIv, maxIv);
+		int dvs[4];
+		for (int i = 0; i < 4; i++) dvs[i] = dist(Random::Generator);
+		mon.dvs = dvs[0] | (dvs[1] << 4) | (dvs[2] << 8) | (dvs[3] << 12);
+	}
+	else {
+		double nStandardDists = 2;
+		discrete_normal_distribution dvdist(minIv, maxIv, nStandardDists);
+		int dvs[4];
+		for (int i = 0; i < 4; i++) dvs[i] = dvdist(Random::Generator);
+		mon.dvs = dvs[0] | (dvs[1] << 4) | (dvs[2] << 8) | (dvs[3] << 12);
+	}
+	
 	
 }
 
@@ -351,7 +361,7 @@ void PokemonGenerator::GenItem(DefPokemon & mon)
 	if (includeTypeSpeciesSpecific) {
 		//try drawing type or species specific item
 		unsigned int addN = 3 - 
-			((includeItemsIgnore & 1) + (includeItemsIgnore & 2) >> 1 + (includeItemsIgnore & 4) >> 2);
+			((includeItemsIgnore & 1) + ((includeItemsIgnore & 2) >> 1) + ((includeItemsIgnore & 4) >> 2));
 		if (addN > 0) {
 			std::uniform_int_distribution<int> dist(0, (int)itemListN - 1 + addN);
 			int rand = dist(Random::Generator);

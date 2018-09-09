@@ -56,11 +56,11 @@ struct SatUAr {
 	friend SatUAr operator+ (const T& lhs, const SatUAr& rhs)
 		{ T val = lhs + rhs.t; return SatUAr(val | -(val < lhs)); }
 	friend SatUAr operator- (const SatUAr& lhs, const SatUAr& rhs)
-		{ T val = lhs.t - rhs.t; return SatUAr(val & -(lhs.t > val)); }
+		{ T val = lhs.t - rhs.t; return SatUAr(val & -(lhs.t >= val)); }
 	friend SatUAr operator- (const SatUAr& lhs, const T& rhs)
-		{ T val = lhs.t - rhs; return SatUAr(val & -(lhs.t > val)); }
+		{ T val = lhs.t - rhs; return SatUAr(val & -(lhs.t >= val)); }
 	friend SatUAr operator- (const T& lhs, const SatUAr& rhs)
-		{ T val = lhs - rhs.t; return SatUAr(val & -(lhs > val)); }
+		{ T val = lhs - rhs.t; return SatUAr(val & -(lhs >= val)); }
 };
 
 

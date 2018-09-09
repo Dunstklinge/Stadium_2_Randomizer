@@ -18,6 +18,7 @@ TrainerGenerator::TrainerGenerator()
 	gen.levelUniformDistribution = true;
 	gen.randEvs = true;
 	gen.randIvs = true;
+	gen.bstEvIvs = false;
 	gen.statsUniformDistribution = false;
 
 	usefulItem = false;
@@ -100,7 +101,7 @@ DefTrainer TrainerGenerator::Generate(const DefTrainer & from)
 			filterListN = _countof(GameInfo::PokemonIds);
 		}
 
-		for (int j = 0; j < filterListN; j++) {
+		for (unsigned int j = 0; j < filterListN; j++) {
 			if (!stayCloseToBST || FilterPokemonByBST(filterList[j], minBst, maxBst)) {
 				bool used = false;
 				for (int k = 0; k < i; k++) used |= ret.pokemon[k].species == filterList[j];
