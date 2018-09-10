@@ -144,6 +144,7 @@
     <ClCompile Include="PokemonGenerator.cpp" />
     <ClCompile Include="PokemonNicknames.cpp" />
     <ClCompile Include="PokemonTable.cpp" />
+    <ClCompile Include="StadiumStrings.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
@@ -173,6 +174,7 @@
     <ClInclude Include="PokemonTable.h" />
     <ClInclude Include="PokemonGenerator.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="StadiumStrings.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="Tables.h" />
     <ClInclude Include="TextMods.h" />

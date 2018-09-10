@@ -90,6 +90,9 @@
     <ClCompile Include="Crc.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="StadiumStrings.cpp">
+      <Filter>Structures</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DefPokemon.h">
@@ -160,6 +163,9 @@
     <ClInclude Include="Crc.h" />
     <ClInclude Include="GeneratorUtil.h">
       <Filter>Generators</Filter>
+    </ClInclude>
+    <ClInclude Include="StadiumStrings.h">
+      <Filter>Structures</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -20,7 +20,7 @@ public:
 	}
 
 	void Apply(DefText* buffer, DefText* newBuffer); //newBuffer is assumed to be the size of the text segment including padding FFs at the end.
-	void AddChange(uint32_t textTable, uint32_t stringNumber, std::string newString);
+	bool AddChange(uint32_t textTable, uint32_t stringNumber, std::string newString);
 
 	struct Change {
 		friend class TextMods;

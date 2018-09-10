@@ -1,6 +1,9 @@
 #include "PokemonNicknames.h"
 
 #include <fstream>
+#include <sstream>
+
+#include "StadiumStrings.h"
 
 
 PokemonNicknames::PokemonNicknames()
@@ -47,15 +50,32 @@ PokemonNicknames::PokemonNicknames(const char* filename)
 		while (end != it && isspace((unsigned char)end[-1])) end--;
 		unsigned int nameLength = end - it;
 		if (nameLength > MAX_NAME) {
-			//TODO: give warning
+			std::stringstream errorMsg;
+			errorMsg << "Invalid Pokemon Name \"" << it << "\"!\r\n name is " << nameLength << " characters long, "
+				"but max character length is " << MAX_NAME << ".";
+			throw std::invalid_argument(errorMsg.str());
 		}
 		else {
 			nicknameMap[currMon].push_back(std::string(it, end));
 		}
 	}
+
+	Sanitize();
 }
 
 
 PokemonNicknames::~PokemonNicknames()
 {
 }
+
+void PokemonNicknames::Sanitize()
+{
+	bool error = false;
+	for (auto& vecs : nicknameMap) {
+		for (std::string& str : vecs.second) {
+			std::string converted = Utf8ToStadiumString(str);
+			str = converted;
+		}
+	}
+}
+

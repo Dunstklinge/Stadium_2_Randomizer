@@ -13,6 +13,8 @@ public:
 	PokemonNicknames(const char* filename);
 	~PokemonNicknames();
 
+	void Sanitize();
+
 	std::map<GameInfo::PokemonId, std::vector<std::string>> nicknameMap;
 
 	bool keepOriginalNames = true;

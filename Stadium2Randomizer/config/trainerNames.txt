@@ -181,7 +181,7 @@ Zug Zug
 39::CHAMPION
 LANCE
 Cheater
-No Recharge
+NoRecharge
 Lv50Dragon
 
 40::ELITE_FOUR

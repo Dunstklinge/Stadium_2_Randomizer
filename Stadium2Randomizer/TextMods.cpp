@@ -1,6 +1,7 @@
-#include "TextMods.h"
+﻿#include "TextMods.h"
 
 #include <algorithm>
+#include <array>
 
 TextMods::TextMods()
 {
@@ -121,11 +122,14 @@ void TextMods::Apply(DefText * buffer, DefText* newBuffer)
 
 }
 
-void TextMods::AddChange(uint32_t textTable, uint32_t stringNumber, std::string newString)
+bool  TextMods::AddChange(uint32_t textTable, uint32_t stringNumber, std::string newString)
 {
+
 	Change c;
 	c.textTable = textTable;
 	c.stringNumber = stringNumber;
 	c.replaceWith = newString;
 	changes.push_back(c);
+
+	return true;
 }
