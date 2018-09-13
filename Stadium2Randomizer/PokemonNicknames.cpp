@@ -26,7 +26,7 @@ PokemonNicknames::PokemonNicknames(const char* filename)
 		const char* it = buff;
 
 		//skip initial white spaces
-		while (*it && isspace((unsigned char)buff[*it])) it++;
+		while (*it && isspace((unsigned char)*it)) it++;
 		const char* start = it;
 		bool spaceAtStart = start == buff;
 		const char* numberEnd;
