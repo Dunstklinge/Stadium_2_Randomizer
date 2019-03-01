@@ -24,5 +24,7 @@ BOOL CMain::InitInstance()
 
 	mainDialog->DoModal();
 
+	delete mainDialog;
+
 	return TRUE;
 }

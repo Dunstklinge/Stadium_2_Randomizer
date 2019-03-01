@@ -24,6 +24,9 @@
     <Filter Include="GUI">
       <UniqueIdentifier>{fc9bd96f-6dac-4fff-88d2-6ca02b785b1e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="CustomData">
+      <UniqueIdentifier>{c2674fbe-c572-4706-a174-22c6417de9cd}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -92,6 +95,12 @@
     </ClCompile>
     <ClCompile Include="StadiumStrings.cpp">
       <Filter>Structures</Filter>
+    </ClCompile>
+    <ClCompile Include="Randomizer.cpp">
+      <Filter>GUI</Filter>
+    </ClCompile>
+    <ClCompile Include="CustomCode.cpp">
+      <Filter>CustomData</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -167,6 +176,15 @@
     <ClInclude Include="StadiumStrings.h">
       <Filter>Structures</Filter>
     </ClInclude>
+    <ClInclude Include="Randomizer.h">
+      <Filter>GUI</Filter>
+    </ClInclude>
+    <ClInclude Include="CustomRosterInfo.h">
+      <Filter>CustomData</Filter>
+    </ClInclude>
+    <ClInclude Include="CustomCode.h">
+      <Filter>CustomData</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="FormatNotes.txt">
@@ -177,6 +195,9 @@
     </Text>
     <Text Include="PokemonRawData.txt">
       <Filter>Tables</Filter>
+    </Text>
+    <Text Include="AssemblyFormatNotes.txt">
+      <Filter>Structures</Filter>
     </Text>
   </ItemGroup>
   <ItemGroup>

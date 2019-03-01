@@ -1,0 +1,111 @@
+this here descriebs properties of the games assembly code that i had to find on my own using a debugger
+
+general interesting places
+
+B0000000: Start address of mapped ROM
+
+8017B5A0: does the item initialisation (a1 = item id, a0/a2 = some params)		D9630 in rom (D9790 in E)
+
+always valid:
+8007D278: general PI DMA transfer
+80003FD8 calls 80006ACC: takes ram, rom, length, calls above with it
+800042A0 calls 80003F74: takes ram, rom, romEnd, calls above with it
+8000442C calls 80004254: doesnt take ram i think, but does take rom, romEnd. use above for gen things
+
+8024A5DD: data, totodile rental struct during pokecup rental selection
+802492B0: data, rental roster gets loaded from rom into here when rental selection gets loaded
+
+801883D0: loads cup rentals et al based on rental table index (a1) from rule+rental+thensome struct		FA740 in rom (FA890 in E)
+80157350: same function when in GC or Rival fight
+800049E0: reads table offset and length, but for many more things than just the rental table
+
+80066B98 calls 8006A600: takes cup type, ball type, round (0|1), returns rulerentalthensomestructs thisIndex for this ruleset; then calls 8006A444 with this index
+80067C38 calls 8006A444: GC version, calls 8006A444 directly with 6
+801451C0: data, +6 holds this returned index 
+8006B9E4 calls 800718B8: takes this index and some more data and returns a pointer to the appropriate rulerentalthensomestruct
+
+80066B88 calls 8006A388: the called function returns 0 for round 1 and 1 for round 2
+801451D0: data, trainer set to fight
+-------------------------------------------------------------------------------------------------------------------------------------------------------
+
+801883D0/80157350:
+
+cup: 801AD620+7FFF+217D -> 801460E0, 801460E0+940 -> 8009F7A0, 8009F7A0+3C ->
+									 801460E0+940 -> 8009F718, 8009F718+3C ->
+glc: 8018C5A0+7FFF+217D -> 801460E0, 801460E0+940 -> 8009F608, 8009F608+3C -> 4
+										    |
+										    |
+glc 8009DF70 -> 801451C0, 801451C0+6 ->  6 -|
+cup 8009DF70 -> 801451C0, 801451C0+6 ->  A -|
+
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+
+rule+rental+thensome struct:
+
+little cup 8009F470		--> rom A0070
+(4x challenge cup?)
+free battl 8009F5C4
+GLC   8009F608
+poke poke  8009F64C	(alo freebattle pokecup rules)
+poke super 8009f690
+poke ultra 8009F6D4
+poke maste 8009F718
+rival 8009F75C
+prime rou1 8009F7A0	(also freebattle primecup rules)
+prime rou2 8009F7E4
+
+
+struct size is 0x44
+
+struct {
+  byte unknown1[0x14] //always 0?
+  byte legalMons[0x20] //bitfield, MSB FIRST, so 0x80 bans bulbasaur
+  halfword thisIndex //literally the index of this struct in the table
+  byte minLevel
+  byte maxLevel
+  halfword maxTotalLevel
+  byte unknown2[0x2]
+  halfword rentalTableIndex
+  byte unknown3[0x6]
+};
+
+
+
+
+code in rom FA730
+
+80146A20
+
+----------------------------------------------------------------------------------------------------------------------------------------------------
+
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 92 49 2A 29 08 A5 55 52 49 4A 95 53 55 0A 95 20 88 D0 21 24 AA 5E A2 22 40 10 81 52 12 17 04 00 00 00 05 05 02 58 00 08 00 00 00 2C 07 FF 00 00		| littlecup
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 92 01 2A 29 0A A5 40 10 48 42 85 41 44 00 14 00 10 00 21 24 AA 1E 22 22 40 10 80 52 00 30 04 00 00 01 00 64 02 58 00 0B 00 00 00 2E 0F FF 00 00		| challenge cup 1 
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 41 12 80 84 A0 12 15 4A 25 20 30 12 11 1A 01 00 08 D0 00 82 05 41 91 14 80 44 01 24 92 07 00 00 00 02 00 64 02 58 00 0B 00 00 00 2E 0F FF 00 00		| challenge cup 2
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 08 00 55 50 11 48 A8 01 00 09 42 08 A0 E4 CA 40 00 00 10 10 50 20 04 89 27 2A 6A 09 60 48 02 00 00 03 00 64 02 58 00 0B 00 00 00 2E 0F FF 00 00		| challenge cup 3 
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 24 80 00 02 44 00 02 A4 92 94 08 A4 0A 01 20 BF 67 2E 00 49 00 80 48 40 18 01 14 80 0D 80 C0 00 00 04 00 64 02 58 00 0B 00 00 00 2E 0F FF 00 00		| challenge cup 4 
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF E0 00 05 00 64 02 58 00 0A 00 01 00 5F EF FF 00 00		| free battle
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF E0 00 06 00 64 02 58 00 0A 00 04 00 31 1F FF 00 00		| GSC
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF F9 FF FF FF FF FF FF FF FF FF FF FF FF 00 00 07 32 37 00 9B 00 09 00 03 00 2D 0F FF 00 00		| pokecup 1
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF F9 FF FF FF FF FF FF FF FF FF FF FF FF 00 00 08 32 37 00 9B 00 09 00 03 00 2D 0F FF 00 00		| pokecup 2
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF F9 FF FF FF FF FF FF FF FF FF FF FF FF 00 00 09 32 37 00 9B 00 09 00 03 00 2D 0F FF 00 00		| pokecup 3
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF F9 FF FF FF FF FF FF FF FF FF FF FF FF 00 00 0A 32 37 00 9B 00 09 00 03 00 2D 0F FF 00 00		| pokecup 4
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF E0 00 0B 00 64 02 58 00 19 00 01 00 32 8F FF 00 00		| rival
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF E0 00 0C 00 64 02 58 00 0A 00 01 00 2F 0F FF 00 00		| prime cup r1 
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF E0 00 0D 00 64 02 58 00 0A 00 02 00 2F 0F FF 00 00		| prime cup r2
+
+---------------------------------------------------------------------------
+
+80066B98: ROM 67798
+
+this function is only used for the cups to determine the struct to use
+
+a0: cup (0=little, 1=poke, 3=prime)
+a1: balltype (0 if no ball, 1/2/3/4 for poke/great/ultra/master)
+a2: 0 = round 1, 1 = round 2
+
+pokecup: 1 1/2 1/0
+primecup: 3 0 1/0
+littlecup: 0 0 1/0
+
+

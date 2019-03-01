@@ -131,6 +131,7 @@
     <ClCompile Include="CMainDialog.cpp" />
     <ClCompile Include="Constants.cpp" />
     <ClCompile Include="Crc.cpp" />
+    <ClCompile Include="CustomCode.cpp" />
     <ClCompile Include="DefPokemon.cpp" />
     <ClCompile Include="DefRoster.cpp" />
     <ClCompile Include="DefText.cpp" />
@@ -144,6 +145,7 @@
     <ClCompile Include="PokemonGenerator.cpp" />
     <ClCompile Include="PokemonNicknames.cpp" />
     <ClCompile Include="PokemonTable.cpp" />
+    <ClCompile Include="Randomizer.cpp" />
     <ClCompile Include="StadiumStrings.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -159,6 +161,7 @@
     <ClInclude Include="CMainDialog.h" />
     <ClInclude Include="Constants.h" />
     <ClInclude Include="Crc.h" />
+    <ClInclude Include="CustomRosterInfo.h" />
     <ClInclude Include="DefGenTable.h" />
     <ClInclude Include="DefPokemon.h" />
     <ClInclude Include="DefRoster.h" />
@@ -173,6 +176,8 @@
     <ClInclude Include="PokemonNicknames.h" />
     <ClInclude Include="PokemonTable.h" />
     <ClInclude Include="PokemonGenerator.h" />
+    <ClInclude Include="Randomizer.h" />
+    <ClInclude Include="CustomCode.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="StadiumStrings.h" />
     <ClInclude Include="stdafx.h" />
@@ -183,6 +188,7 @@
     <ClInclude Include="Util.h" />
   </ItemGroup>
   <ItemGroup>
+    <Text Include="AssemblyFormatNotes.txt" />
     <Text Include="FormatNotes.txt" />
     <Text Include="MoveRawData.txt" />
     <Text Include="PokemonRawData.txt" />

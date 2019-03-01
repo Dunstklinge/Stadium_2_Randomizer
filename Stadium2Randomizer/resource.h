@@ -27,13 +27,22 @@
 #define IDC_EDSEED                      1027
 #define IDC_EDPRIMECUPLEVEL             1028
 #define IDC_CBMONSPECIFICITEMS          1029
-#define IDC_CBGLCRENTALS                1031
+#define IDC_CBGLCRENTALLEVELS           1031
 #define IDC_EDGLCLEVEL                  1032
 #define IDC_CBSPECIESEVIV               1033
 #define IDC_CB_TRAINERPOKE_MIN1ATK      1034
 #define IDC_CBSTAYCLOSETOBST            1036
-#define IDC_CHECK3                      1037
 #define IDC_CBBOSSSTAYCLOSETOBST        1037
+#define IDC_CBMORERENTALTABLES          1038
+#define IDC_CBR2RENTALS                 1039
+#define IDC_CBMULTIPLEGLCRENTALS        1040
+#define IDC_CBCHANGEITEMN               1042
+#define IDC_EDCHANGEITEMN               1043
+#define IDC_CBITEMSPERRENTAL            1044
+#define IDC_CBPOKECUPRENTALS            1045
+#define IDC_RDSPECIAL                   1046
+#define IDC_COMBO1                      1047
+#define IDC_CBSPECIAL                   1047
 
 // Next default values for new objects
 // 
@@ -41,7 +50,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        103
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1038
+#define _APS_NEXT_CONTROL_VALUE         1048
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
