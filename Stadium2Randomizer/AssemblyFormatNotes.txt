@@ -26,6 +26,14 @@ always valid:
 
 80066B88 calls 8006A388: the called function returns 0 for round 1 and 1 for round 2
 801451D0: data, trainer set to fight
+
+8015F6F4: deals with counting moves that a pokemon knows when attacks are viewed in the library
+8015E5BC: loads a move from eggmove+levelupmove list
+8015F014, calls 80063D54: function determines if given tm (a1) for given pokemon(a0) was added in yellow as hardcoded if-then-elses. 
+8017F268: data, static location, list of egg moves
+8017F3F8: data, static location, list of tm moves
+8017F0D8: data, static location, list of levelup moves
+80099F00: data, rom copy of levelup moves (bulbasaur)
 -------------------------------------------------------------------------------------------------------------------------------------------------------
 
 801883D0/80157350:
@@ -109,3 +117,42 @@ primecup: 3 0 1/0
 littlecup: 0 0 1/0
 
 
+------------------------------------------------------------------------
+
+
+8017F3F8, calls 8015E2D8:
+
+A1, A2 buffers
+
+start:
+byte r1 = *a0
+if(!r1) return
+
+startInner:
+byte r2 = *a1
+
+if(r2) {
+  byte t7 = *a0
+}
+else {
+  a0 += 0x14
+  goto start
+}
+if(r2 != t7) {
+  a1 += 0x14
+  goto startInner
+}
+
+all 4 buffers have struct size of 0x14
+
+--------------------------------------------------------
+8015F014, calls 80063D54
+
+checks for these pokemon:
+
+06	06	Charizard	(got fly)
+0C	12	Butterfree (got flash)
+31	49	Venomoth (got flash)
+32	50	Diglett (got cut)
+33	51	Dugtrio (got cut)
+8D	141	Kaputops (got cut)

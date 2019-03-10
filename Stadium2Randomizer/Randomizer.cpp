@@ -78,14 +78,24 @@ void Randomizer::RandomizeRom(const CString & path)
 	// randomize data
 	//
 
+	m_progressPartMinPercent = 0.0;
+	m_progressPartMaxPercent = 0.1;
 	RandomizeRegularRentals();
 
+	m_progressPartMinPercent = 0.1;
+	m_progressPartMaxPercent = 0.5;
 	RandomizeHackedRentals();
 
+	m_progressPartMinPercent = 0.5;
+	m_progressPartMaxPercent = 0.9;
 	RandomizeTrainers();
 
+	m_progressPartMinPercent = 0.9;
+	m_progressPartMaxPercent = 0.9;
 	RandomizeItems();
 
+	m_progressPartMinPercent = 0.9;
+	m_progressPartMaxPercent = 1.0;
 	SortInjectedData();
 
 	//
@@ -147,6 +157,12 @@ void Randomizer::RandomizeRom(const CString & path)
 void Randomizer::SetProgress(double percent)
 {
 	m_settings->progressBar.SetPos((int)((m_progressBarMax - m_progressBarMin) * percent + m_progressBarMin));
+}
+
+void Randomizer::SetPartialProgress(double percent)
+{
+	double partPercent = m_progressPartMinPercent + (m_progressPartMaxPercent - m_progressPartMinPercent) * percent;
+	SetProgress(partPercent);
 }
 
 void Randomizer::DoSwaps(void * buffer, size_t size)
@@ -238,6 +254,7 @@ void Randomizer::RandomizeRegularRentals()
 	auto randomizeRentals = [&](int cupIndex) {
 		for (int i = 0; i < rentalIt[cupIndex].nPokemon; i++) {
 			DefPokemon newMon = pokeGen.Generate(rentalIt[cupIndex].pokemon[i]);
+			if (m_settings->min1Buttons == 5) { newMon.move1 = newMon.move2 = newMon.move3 = newMon.move4 = GameInfo::METRONOME; }
 			rentalIt[cupIndex].pokemon[i] = newMon;
 			newMon.Print(m_genLog);
 			m_genLog << "\n";
@@ -250,32 +267,48 @@ void Randomizer::RandomizeRegularRentals()
 	pokeGen.minLevel = 5;
 	pokeGen.maxLevel = 5;
 	pokeGen.generalMoveFilter = m_cupRules[LITTLECUP].legalMoveFilter;
+	if (m_settings->legalMovesOnly) {
+		using namespace std::placeholders;
+		pokeGen.generalMoveFilter = std::bind(std::logical_and<bool>(),
+			std::bind(pokeGen.generalMoveFilter, _1, _2),
+			std::bind(FilterLegalMovesOnly, _1, _2));
+	}
 	pokeGen.speciesFilterBuffer = m_cupRules[LITTLECUP].legalMonList;
 	pokeGen.speciesFilterBufferN = m_cupRules[LITTLECUP].legalMonListN;
 	randomizeRentals(0);
+
+	SetPartialProgress(0.2);
 
 	m_genLog << "Prime Cup:\n";
 	//prime cup
 	int primecupLevel = _tstoi(m_settings->strPrimeCupLevel);
 	pokeGen.ClearAllFilters();
+	if (m_settings->legalMovesOnly)
+		pokeGen.generalMoveFilter = FilterLegalMovesOnly;
 	pokeGen.minLevel = m_settings->randPrimecupLevels ? primecupLevel : 100;
 	pokeGen.maxLevel = 100;
 	randomizeRentals(1);
+
+	SetPartialProgress(0.5);
 
 	//prime cup r2
 	m_genLog << "Prime Cup R2:\n";
 	randomizeRentals(2);
 
+	SetPartialProgress(0.75);
+
 	//poke cup
 	m_genLog << "Poke Cup:\n";
 	pokeGen.ClearAllFilters();
+	if (m_settings->legalMovesOnly)
+		pokeGen.generalMoveFilter = FilterLegalMovesOnly;
 	pokeGen.speciesFilterBuffer = m_cupRules[POKECUP].legalMonList;
 	pokeGen.speciesFilterBufferN = m_cupRules[POKECUP].legalMonListN;
 	pokeGen.minLevel = 50;
 	pokeGen.maxLevel = m_settings->randLevels ? 55 : 50;
 	randomizeRentals(3);
 
-	SetProgress(0.05);
+	SetPartialProgress(1);
 
 	m_genLog << "... generating rentals done!\n";
 }
@@ -296,6 +329,9 @@ void Randomizer::RandomizeHackedRentals()
 	pokeGen.bstEvIvs = m_settings->rentalSpeciesEvIv;
 	pokeGen.statsUniformDistribution = m_settings->randEvIvUniformDist;
 	pokeGen.levelUniformDistribution = m_settings->randLevelsUniformDist;
+
+	if (m_settings->legalMovesOnly) 
+		pokeGen.generalMoveFilter = FilterLegalMovesOnly;	
 
 	const auto tid = [](int id) {return id + 5; };
 	const auto AddRentalSet = [&](int tidBorder, int rentalIndex) {
@@ -334,6 +370,7 @@ void Randomizer::RandomizeHackedRentals()
 			newMon.species = m_cupRules[cup].legalMonListN == 0 ? (GameInfo::PokemonId)(i + 1) : m_cupRules[cup].legalMonList[i];
 			newMon.item = GameInfo::NO_ITEM;
 			newMon = pokeGen.Generate(newMon);
+			if (m_settings->min1Buttons == 5) { newMon.move1 = newMon.move2 = newMon.move3 = newMon.move4 = GameInfo::METRONOME; }
 			*(DefPokemon*)&(table[i * sizeof(DefPokemon) + 4]) = newMon;
 			newMon.Print(m_genLog);
 			m_genLog << "\n";
@@ -352,13 +389,14 @@ void Randomizer::RandomizeHackedRentals()
 		AddRentalSet(tid(5), GenRentalSetAndAdd(POKECUP));
 		AddRentalSet(tid(6),-1); //end it
 	}
-
+	SetPartialProgress(0.2);
 	if (m_settings->multipleGlcRentals) {
 		AddRentalSet(tid(8), GenRentalSetAndAdd(GLC)); //start at falkner
 		AddRentalSet(tid(13), GenRentalSetAndAdd(GLC));//new rentals from jasmine
 		AddRentalSet(tid(19), GenRentalSetAndAdd(GLC));//new rentals after elite 4
 		AddRentalSet(tid(29),-1); //end it after rival
 	}
+	SetPartialProgress(0.4);
 	if (m_settings->multipleR2Rentals) {
 		if (m_settings->multiplePokecupRentals) {
 			//pokecups, this time all 4
@@ -372,6 +410,8 @@ void Randomizer::RandomizeHackedRentals()
 			AddRentalSet(tid(34),-1); //end it
 		}
 
+		SetPartialProgress(0.7);
+
 		if (m_settings->multipleGlcRentals) {
 			AddRentalSet(tid(35), GenRentalSetAndAdd(GLC)); //start at falkner
 			AddRentalSet(tid(40), GenRentalSetAndAdd(GLC));//new rentals from jasmine
@@ -379,9 +419,11 @@ void Randomizer::RandomizeHackedRentals()
 			AddRentalSet(tid(56),-1); //end it after rival
 		}
 	}
+	SetPartialProgress(0.9);
 
 	std::sort(m_customRInfoTable.begin(), m_customRInfoTable.end(), [](CustomRosterInfo& lhs, CustomRosterInfo& rhs) -> bool { return lhs.fightMin > rhs.fightMin; });
 	
+	SetPartialProgress(1.0);
 
 	m_genLog << "generating additional rental sets done!\n";
 }
@@ -437,7 +479,7 @@ void Randomizer::RandomizeTrainers()
 	for (int i = 62; i <= 62; i++) ruleMap[i - 2] = &m_cupRules[5];
 	for (int i = 63; i <= 63; i++) ruleMap[i - 2] = &m_cupRules[6];
 
-	SetProgress(0.08);
+	SetPartialProgress(0.1);
 
 
 
@@ -446,7 +488,19 @@ void Randomizer::RandomizeTrainers()
 		tgen.minLevel = ruleMap[i - 2]->minLevel;
 		tgen.maxLevel = ruleMap[i - 2]->maxLevel;
 		tgen.levelSum = ruleMap[i - 2]->levelSum;
-		tgen.gen.generalMoveFilter = ruleMap[i - 2]->legalMoveFilter;
+		if (m_settings->legalMovesOnly) {
+			if (ruleMap[i - 2]->legalMoveFilter) {
+				using namespace std::placeholders;
+				tgen.gen.generalMoveFilter = std::bind(std::logical_and<bool>(),
+					std::bind(FilterLegalMovesOnly, _1, _2),
+					std::bind(ruleMap[i - 2]->legalMoveFilter, _1, _2));
+			}
+			else {
+				tgen.gen.generalMoveFilter = FilterLegalMovesOnly;
+			}
+		}
+		else 
+			tgen.gen.generalMoveFilter = ruleMap[i - 2]->legalMoveFilter;
 		tgen.gen.speciesFilterBuffer = ruleMap[i - 2]->legalMonList;
 		tgen.gen.speciesFilterBufferN = ruleMap[i - 2]->legalMonListN;
 		auto oldOneMoveFilter = tgen.gen.minOneMoveFilter;
@@ -490,7 +544,7 @@ void Randomizer::RandomizeTrainers()
 			//SetProgress(0.08 + (i - 2) * 0.0132 + 0.0132 * (j+1)/(float)nTrainers);
 		}
 
-		SetProgress(0.08 + (i - 1) * (0.82 / 62));
+		SetPartialProgress(0.1 + (i - 1) * (0.9 / 62));
 	}
 
 	m_genLog << "... generating trainers done!\n";
@@ -501,7 +555,7 @@ void Randomizer::RandomizeTrainers()
 	memcpy(m_romText, newText, DefText::segSize);
 	delete[]((uint8_t*)newText);
 
-	SetProgress(0.93);
+	SetPartialProgress(1.0);
 }
 
 void Randomizer::RandomizeItems()
@@ -606,7 +660,7 @@ void Randomizer::RandomizeItems()
 
 	m_genLog << "generating random item sets done!\n";
 
-	SetProgress(1);
+	SetPartialProgress(1.0);
 }
 
 void Randomizer::SortInjectedData()
@@ -660,6 +714,8 @@ void Randomizer::SortInjectedData()
 		m_romReplacements.emplace_back(RomReplacements{ m_customItemRedirectCode, size, RentalItemFuncAddr() });
 		InjectedItem::SetRedirectTarget(m_customItemRedirectCode, itemCodeAddr + 0xB0000000);
 	}
+	SetPartialProgress(0.1);
+
 	if (insertRentalData) {
 		unsigned int size;
 
@@ -672,6 +728,7 @@ void Randomizer::SortInjectedData()
 		m_romReplacements.emplace_back(RomReplacements{ m_customRentalRedirectCode, size, RentalRosterFuncAddr() });
 		InjectedRental::SetRedirectTarget(m_customRentalRedirectCode, rentalCodeAddr + 0xB0000000);
 	}
+	SetPartialProgress(0.2);
 
 	uint32_t codeOffset = offsetIts[0];
 	uint32_t codeSize = 0x1000;
@@ -690,6 +747,7 @@ void Randomizer::SortInjectedData()
 		InjectedRental::SetInjectionTableAddress(m_customRentalInjectCode, m_genRosterTableOffset + 0xB0000000);
 		m_needsNewCrc = true;
 	}
+	SetPartialProgress(0.3);
 
 	//insert data, adjust header tables
 	if (insertItemData) {
@@ -720,17 +778,19 @@ void Randomizer::SortInjectedData()
 	}
 	m_genLog << "done placing custom data; used " << offsetIts[0] - borders[0][0] << "/" << borders[0][1] - borders[0][0] << " in space 1, "
 		<< offsetIts[1] - borders[1][0] << "/" << borders[1][1] - borders[1][0] << " in space 2\n";
+	SetPartialProgress(0.5);
+
 	//now curate it all
 	for (auto& it : m_customIInfoTable) it.Curate(false);
 	for (auto& it : m_customRInfoTable) it.Curate(false);
 	//for (auto& it : m_customItemTables) item table is list of bytes and does not need to be curated
 	for (auto& table : m_customRentalTables)
 		for (DefPokemon* it = (DefPokemon*)(table.data() + 4); it < (DefPokemon*)(table.data() + table.size()); it++) it->Curate(false);
-
+	SetPartialProgress(0.75);
 
 	//all gathered, now do swaps
 	for (auto& rep : m_romReplacements) {
 		DoSwaps(rep.buffer, rep.bufferSize);
 	}
-
+	SetPartialProgress(1.0);
 }

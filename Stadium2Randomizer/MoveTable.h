@@ -24,5 +24,8 @@ namespace GameInfo {
 
 	extern Move Moves[256];
 
+	extern const MoveId TmsGlc[57];
+	extern const MoveId TmsRby[55];
+
 	void InitMoveTable();
 }

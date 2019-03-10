@@ -10,19 +10,20 @@
 #define IDC_RD1STRONGATK                1006
 #define IDC_RD1STAB                     1007
 #define IDC_RD1STRONGSTAB               1008
-#define IDC_CBBATTLEITEMS               1009
-#define IDC_CBRANDLEVEL                 1010
-#define IDC_CBRANDLEVEL_UNIFORMDIST     1011
-#define IDC_CBRANDOMEVIV                1012
-#define IDC_CBREVIV_UNIFORMDIST2        1013
-#define IDC_CB_TRAINER_RANDLEVELS       1014
-#define IDC_CB_TRAINER_RANDSPECIES      1015
-#define IDC_CB_TRAINER_RANDNAME         1016
-#define IDC_CB_TRAINER_RANDMONNAMES     1018
-#define IDC_BTNBROWSE                   1019
-#define IDC_CBRANDCHOOSEITEMS           1021
-#define IDC_RANDPRIMELEVELS             1023
-#define IDC_PROGRESS                    1024
+#define IDC_CBSPECIAL                   1009
+#define IDC_CBBATTLEITEMS               1010
+#define IDC_CBRANDLEVEL                 1011
+#define IDC_CBRANDLEVEL_UNIFORMDIST     1012
+#define IDC_CBRANDOMEVIV                1013
+#define IDC_CBREVIV_UNIFORMDIST2        1014
+#define IDC_CB_TRAINER_RANDLEVELS       1015
+#define IDC_CB_TRAINER_RANDSPECIES      1016
+#define IDC_CB_TRAINER_RANDNAME         1017
+#define IDC_CB_TRAINER_RANDMONNAMES     1019
+#define IDC_BTNBROWSE                   1020
+#define IDC_CBRANDCHOOSEITEMS           1022
+#define IDC_RANDPRIMELEVELS             1024
+#define IDC_PROGRESS                    1025
 #define IDC_RD1NOTHING                  1026
 #define IDC_EDSEED                      1027
 #define IDC_EDPRIMECUPLEVEL             1028
@@ -41,8 +42,10 @@
 #define IDC_CBITEMSPERRENTAL            1044
 #define IDC_CBPOKECUPRENTALS            1045
 #define IDC_RDSPECIAL                   1046
+#define IDC_RDYOLONOME                  1046
 #define IDC_COMBO1                      1047
-#define IDC_CBSPECIAL                   1047
+#define IDC_CBLEGALMOVESONLY            1049
+#define IDC_MFCSHELLLIST1               1050
 
 // Next default values for new objects
 // 
@@ -50,7 +53,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        103
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1048
+#define _APS_NEXT_CONTROL_VALUE         1051
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

@@ -10,6 +10,9 @@ bool FilterMoveByBP(GameInfo::MoveId, unsigned int minBP, unsigned int maxBP);
 bool FilterMoveByStab(GameInfo::MoveId, GameInfo::PokemonId);
 bool FilterOutLittlecupMoves(GameInfo::MoveId, GameInfo::PokemonId);
 
+bool FilterMetronomeOnly(GameInfo::MoveId);
+bool FilterLegalMovesOnly(GameInfo::MoveId, GameInfo::PokemonId);
+
 extern GameInfo::PokemonId LittlecupLegalMons[86];
 extern GameInfo::PokemonId PokecupLegalMons[246];
 

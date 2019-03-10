@@ -1,9 +1,79 @@
 #include "PokemonTable.h"
+#include "MoveTable.h"
 
+#include <algorithm>
 #include <string.h>
 
 namespace GameInfo {
 	Pokemon Pokemons[256] = { 0 };
+	LevelupMoves PokemonLevelupMoveEntries[251];
+	PokemonGen1TMsEntry PokemonGen1Tms[251];
+	PokemonLegalMovesEntry PokemonLegalMoves[251];
+
+	std::vector<MoveId> PokemonLegalMoves_BaseList;
+
+	namespace {
+		void InitPokemonLegalMoves() {
+			for (int i = 0; i < 251; i++) {
+				int thisMonStart = PokemonLegalMoves_BaseList.size();
+				auto contains = [&](MoveId move) {
+					return std::find(PokemonLegalMoves_BaseList.begin() + thisMonStart,
+									 PokemonLegalMoves_BaseList.end(),
+									 move)
+						!= PokemonLegalMoves_BaseList.end();
+				};
+				auto add = [&](MoveId move) {
+					if (!contains(move)) PokemonLegalMoves_BaseList.push_back(move);
+				};
+				//start with glc tms
+				for (int tm = 0; tm < sizeof(GameInfo::TmsGlc); tm++) {
+					if ((Pokemons[i + 1].tms[tm % 8] >> (tm % 8)) & 1) {
+						PokemonLegalMoves_BaseList.push_back(TmsGlc[tm]);
+					}
+				}
+				//add rb tms
+				for (int tm = 0; tm < sizeof(GameInfo::TmsRby); tm++) {
+					if (((PokemonGen1Tms[i + 1].tms[tm % 8] >> (tm % 8)) & 1) 
+						&& !contains(TmsRby[tm]))
+					{
+						add(TmsRby[tm]);
+					}
+				}
+				//add y tms; note that those are hardcoded in stadium as well, so we will do this here too
+				if ((i + 1) == PokemonId::CHARIZARD)		add(MoveId::FLY);	//06	06	Charizard(got fly)
+				else if ((i + 1) == PokemonId::BUTTERFREE)	add(MoveId::FLASH);	//0C	12	Butterfree(got flash)
+				else if ((i + 1) == PokemonId::VENOMOTH)	add(MoveId::FLASH);	//31	49	Venomoth(got flash)
+				else if ((i + 1) == PokemonId::DIGLETT)		add(MoveId::CUT);	//32	50	Diglett(got cut)
+				else if ((i + 1) == PokemonId::DUGTRIO)		add(MoveId::CUT);	//33	51	Dugtrio(got cut)
+				else if ((i + 1) == PokemonId::KABUTOPS)	add(MoveId::CUT);	//8D	141	Kaputops(got cut)
+				//lastly, levelup non-egg moves
+				for (auto& it : PokemonLevelupMoveEntries[i]) {
+					if (!it.flags.egg && !it.flags.eggC) {
+						add(it.move);
+					}
+				}
+
+				//now, egg moves
+				int eggStart = PokemonLegalMoves_BaseList.size();
+				for (auto& it : PokemonLevelupMoveEntries[i]) {
+					if (it.flags.egg || it.flags.eggC) {
+						add(it.move);
+					}
+				}
+
+				//build entry out of these
+				PokemonLegalMovesEntry entry;
+				entry.beginIt = thisMonStart;
+				entry.normal.beginIt = thisMonStart;
+				entry.normal.endIt = eggStart;
+				entry.egg.beginIt = eggStart;
+				entry.egg.endIt = PokemonLegalMoves_BaseList.size();
+				entry.endIt = PokemonLegalMoves_BaseList.size();
+				
+				PokemonLegalMoves[i] = entry;
+			}
+		}
+	}
 
 	void InitPokemonTable()
 	{
@@ -11,9 +81,34 @@ namespace GameInfo {
 
 		//note that bulbasaur appears to be 1 so 0 must hold a special meaning
 		memcpy(Pokemons+1, PokemonRawData, sizeof(PokemonRawData));
+
+
+		//levelup move list
+		int it = 0;
+		for (int i = 0; i < 251; i++) {
+			PokemonLevelupMoveEntries[i] = { 0,0 };
+			while (true) {
+				PokemonId mon = (PokemonId)(i + 1);
+				LevelupMoveEntry* t = (LevelupMoveEntry*)(PokemonLevelupMovesRawData + it);
+				if(!PokemonLevelupMoveEntries[i].beginIt) PokemonLevelupMoveEntries[i].beginIt = t;
+				it += 3;
+				if (!t->level) {
+					PokemonLevelupMoveEntries[i].endIt = (LevelupMoveEntry*)(PokemonLevelupMovesRawData + it);
+					while (it % 4) it++;
+					break;
+				}
+			}
+		}
+
+		//gen 1 tm list
+		memcpy(PokemonGen1Tms, PokemonGen1TmsRawData, sizeof(PokemonGen1TMsEntry) * 151);
+
+		//build legal moves list from this info
+		InitPokemonLegalMoves();
 	}
 
-	PokemonId PokemonIds[]{
+
+	const PokemonId PokemonIds[]{
 		BULBASAUR,
 		IVYSAUR,
 		VENUSAUR,

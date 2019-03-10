@@ -199,6 +199,12 @@
     <Text Include="AssemblyFormatNotes.txt">
       <Filter>Structures</Filter>
     </Text>
+    <Text Include="LevelupMovesRawData.txt">
+      <Filter>Tables</Filter>
+    </Text>
+    <Text Include="PokemonRBYTmList.txt">
+      <Filter>Tables</Filter>
+    </Text>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Stadium2Randomizer.rc">

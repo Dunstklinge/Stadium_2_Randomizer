@@ -21,6 +21,7 @@ public:
 	~Randomizer();
 
 	static void Randomize(const CString& path, CMainDialog* settings);
+	void RandomizeRom(const CString& path);
 
 private:
 
@@ -73,7 +74,6 @@ private:
 	uint32_t m_genItemTableOffset;
 	uint32_t m_genRosterTableOffset;
 
-	void RandomizeRom(const CString& path);
 
 	bool AnalyseRom();
 	CupRules GenerateCupRules();
@@ -85,6 +85,9 @@ private:
 
 	int m_progressBarMin, m_progressBarMax;
 	void SetProgress(double percent);
+	double m_progressPartMinPercent, m_progressPartMaxPercent;
+	void SetPartialProgress(double percent);
+
 	bool m_normal, m_byteswapped, m_wordswapped;
 	void DoSwaps(void* buffer, size_t size);
 

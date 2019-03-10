@@ -25,6 +25,19 @@ bool FilterOutLittlecupMoves(GameInfo::MoveId move, GameInfo::PokemonId mon)
 	return move != GameInfo::DRAGON_RAGE && move != GameInfo::SONICBOOM;
 }
 
+bool FilterMetronomeOnly(GameInfo::MoveId move)
+{
+	return move == GameInfo::METRONOME;
+}
+
+bool FilterLegalMovesOnly(GameInfo::MoveId move, GameInfo::PokemonId mon)
+{
+	for (auto m : GameInfo::PokemonLegalMoves[mon - 1]) {
+		if (m == move) return true;
+	}
+	return false;
+}
+
 using namespace GameInfo;
 
 GameInfo::PokemonId LittlecupLegalMons[86]{

@@ -121,3 +121,40 @@ compiled x86 code of mupen64 i realized that the 6 default items are hardcoded i
 saved as a table or some shit.
 that means 6 items is the limit. shit.
 to make things worse, this code is within the checksum range, so ill have to find out how to calc these too
+
+/////////////////////////////////////////////////
+
+actually had to find this myself:
+9AB00: structs that define levelup moves of pokemon
+struct size 3, list of structs until canceled by 00.
+struct levelMove {
+	byte levelUp //level where move is aquired
+	byte moveId	 //id of move in question
+	byte flags { //what this specific struct instance applies to
+		01: levelup in r/b
+		02: levelup in y
+		04: levelup in g/s
+		08: levelup in c(?)
+		10: move tutor?
+		20: ?? (all egg moves have this?)
+		40: egg move
+		80: ??
+	}
+}
+- multiple definitions of same move are used when g/s has different levelup move
+- they are ordered by levelUp
+
+
+9A9E7-9A9E8: ?
+9A9E9-9A9EF: dragonite gen 1 tm learn bits
+9A9F0-9A9F1: ?
+9A9F2-9A9F8: mewtwo gen 1 tm learn bits
+
+looks like this:
+9A4B0: DWORD unknown (0x65, unknown size)
+then
+struct {
+	uint8_t unknown;
+	uint8_t tmHmFlags[7]; //lowbit to hibit, left to right
+	uint8_t end; //0 when continue, ff at end
+}

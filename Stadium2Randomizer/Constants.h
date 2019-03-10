@@ -1231,3 +1231,4 @@ namespace GameInfo {
 		DARK = 0x1B
 	};
 }
+
