@@ -1210,7 +1210,7 @@ namespace GameInfo {
 
 
 namespace GameInfo {
-	enum TYPE {
+	enum TYPE : uint8_t {
 		NORMAL = 0x00,
 		FIGHTING = 0x01,
 		FLYING = 0x02,

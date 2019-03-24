@@ -5,10 +5,10 @@
 #include <string.h>
 
 namespace GameInfo {
-	Pokemon Pokemons[256] = { 0 };
-	LevelupMoves PokemonLevelupMoveEntries[251];
-	PokemonGen1TMsEntry PokemonGen1Tms[251];
-	PokemonLegalMovesEntry PokemonLegalMoves[251];
+	Pokemon Pokemons[256] = { 0 };					//1 based (for some reason, its like that in the rom)
+	LevelupMoves PokemonLevelupMoveEntries[251];	//0 based (its like that in the rom)
+	PokemonGen1TMsEntry PokemonGen1Tms[151];		//0 based
+	PokemonLegalMovesEntry PokemonLegalMoves[251];	//0 based
 
 	std::vector<MoveId> PokemonLegalMoves_BaseList;
 
@@ -27,13 +27,13 @@ namespace GameInfo {
 				};
 				//start with glc tms
 				for (int tm = 0; tm < sizeof(GameInfo::TmsGlc); tm++) {
-					if ((Pokemons[i + 1].tms[tm % 8] >> (tm % 8)) & 1) {
+					if ((Pokemons[i + 1].tms[tm / 8] >> (tm % 8)) & 1) {
 						PokemonLegalMoves_BaseList.push_back(TmsGlc[tm]);
 					}
 				}
 				//add rb tms
-				for (int tm = 0; tm < sizeof(GameInfo::TmsRby); tm++) {
-					if (((PokemonGen1Tms[i + 1].tms[tm % 8] >> (tm % 8)) & 1) 
+				if(i < 151) for (int tm = 0; tm < sizeof(GameInfo::TmsRby); tm++) {
+					if (((PokemonGen1Tms[i].tms[tm / 8] >> (tm % 8)) & 1) 
 						&& !contains(TmsRby[tm]))
 					{
 						add(TmsRby[tm]);
@@ -93,7 +93,7 @@ namespace GameInfo {
 				if(!PokemonLevelupMoveEntries[i].beginIt) PokemonLevelupMoveEntries[i].beginIt = t;
 				it += 3;
 				if (!t->level) {
-					PokemonLevelupMoveEntries[i].endIt = (LevelupMoveEntry*)(PokemonLevelupMovesRawData + it);
+					PokemonLevelupMoveEntries[i].endIt = (LevelupMoveEntry*)(PokemonLevelupMovesRawData + it - 3);
 					while (it % 4) it++;
 					break;
 				}

@@ -22,9 +22,11 @@ namespace GameInfo {
 		uint8_t genderRatio;
 		uint8_t unknowns[2];
 		uint8_t growthRate;
-		uint8_t eggGroup1;
-		uint8_t eggGroup2;
-		uint8_t tms[7];	//glc only; lobit to hibit, left to right
+		struct {
+			uint8_t eggGroup1 : 4;
+			uint8_t eggGroup2 : 4;
+		};
+		uint8_t tms[8];	//glc only; lobit to hibit, left to right
 
 		unsigned int CalcBST() { return baseHp + baseAtk + baseDef + baseSpd + baseSpA + baseSpD; }
 	};
@@ -74,7 +76,7 @@ namespace GameInfo {
 		#include "PokemonRBYTmList.txt"
 	};
 
-	extern PokemonGen1TMsEntry PokemonGen1Tms[251]; //actually rb only, no y
+	extern PokemonGen1TMsEntry PokemonGen1Tms[151]; //actually rb only, no y
 
 
 

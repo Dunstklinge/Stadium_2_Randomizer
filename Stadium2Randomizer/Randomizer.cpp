@@ -373,7 +373,6 @@ void Randomizer::RandomizeHackedRentals()
 	const auto GenRentalSetAndAdd = [&](CupRulesId cup) {
 		auto& table = m_customRentalTables.emplace_back();
 
-		pokeGen.ClearAllFilters();
 		pokeGen.minLevel = m_cupRules[cup].minLevel;
 		pokeGen.maxLevel = m_cupRules[cup].maxLevel;
 
@@ -466,23 +465,25 @@ void Randomizer::RandomizeTrainers()
 		const CupRule* operator->() const { return rule; }
 
 	} ruleMap[62];
-	for (int i = 2; i <= 5; i++) ruleMap[i - 2] = { &m_cupRules[0], 0 };
-	for (int i = 6; i <= 6; i++) ruleMap[i - 2] = { &m_cupRules[1], 0 };
-	for (int i = 7; i <= 28; i++) ruleMap[i - 2] = { &m_cupRules[2], 0 };
+	for (int i = 2; i <= 5; i++) ruleMap[i - 2] = { &m_cupRules[POKECUP], 0 };
+	for (int i = 6; i <= 6; i++) ruleMap[i - 2] = { &m_cupRules[LITTLECUP], 0 };
+	for (int i = 7; i <= 7; i++) ruleMap[i - 2] = { &m_cupRules[PRIMECUP], 0 };
+	for (int i = 8; i <= 28; i++) ruleMap[i - 2] = { &m_cupRules[GLC], 0 };
 
-	for (int i = 29; i <= 32; i++) ruleMap[i - 2] = { &m_cupRules[0], 1 };
-	for (int i = 33; i <= 33; i++) ruleMap[i - 2] = { &m_cupRules[1], 1 };
-	for (int i = 34; i <= 55; i++) ruleMap[i - 2] = { &m_cupRules[2], 1 };
+	for (int i = 29; i <= 32; i++) ruleMap[i - 2] = { &m_cupRules[POKECUP], 1 };
+	for (int i = 33; i <= 33; i++) ruleMap[i - 2] = { &m_cupRules[LITTLECUP], 1 };
+	for (int i = 34; i <= 34; i++) ruleMap[i - 2] = { &m_cupRules[PRIMECUP], 1 };
+	for (int i = 35; i <= 55; i++) ruleMap[i - 2] = { &m_cupRules[GLC], 1 };
 
-	for (int i = 56; i <= 56; i++) ruleMap[i - 2] = { &m_cupRules[3], 0 };
-	for (int i = 57; i <= 57; i++) ruleMap[i - 2] = { &m_cupRules[4], 0 };
-	for (int i = 58; i <= 58; i++) ruleMap[i - 2] = { &m_cupRules[5], 0 };
-	for (int i = 59; i <= 59; i++) ruleMap[i - 2] = { &m_cupRules[6], 0 };
+	for (int i = 56; i <= 56; i++) ruleMap[i - 2] = { &m_cupRules[CHALLENGECUP_1], 0 };
+	for (int i = 57; i <= 57; i++) ruleMap[i - 2] = { &m_cupRules[CHALLENGECUP_2], 0 };
+	for (int i = 58; i <= 58; i++) ruleMap[i - 2] = { &m_cupRules[CHALLENGECUP_3], 0 };
+	for (int i = 59; i <= 59; i++) ruleMap[i - 2] = { &m_cupRules[CHALLENGECUP_4], 0 };
 
-	for (int i = 60; i <= 60; i++) ruleMap[i - 2] = { &m_cupRules[3], 1 };
-	for (int i = 61; i <= 61; i++) ruleMap[i - 2] = { &m_cupRules[4], 1 };
-	for (int i = 62; i <= 62; i++) ruleMap[i - 2] = { &m_cupRules[5], 1 };
-	for (int i = 63; i <= 63; i++) ruleMap[i - 2] = { &m_cupRules[6], 1 };
+	for (int i = 60; i <= 60; i++) ruleMap[i - 2] = { &m_cupRules[CHALLENGECUP_1], 1 };
+	for (int i = 61; i <= 61; i++) ruleMap[i - 2] = { &m_cupRules[CHALLENGECUP_2], 1 };
+	for (int i = 62; i <= 62; i++) ruleMap[i - 2] = { &m_cupRules[CHALLENGECUP_3], 1 };
+	for (int i = 63; i <= 63; i++) ruleMap[i - 2] = { &m_cupRules[CHALLENGECUP_4], 1 };
 
 	//
 	//collect shuffle candidates
@@ -1015,6 +1016,14 @@ void Randomizer::SortInjectedData()
 	//insert data, adjust header tables
 	if (insertItemData) {
 		for (unsigned int i = 0; i < m_customItemTables.size(); i++) {
+			//if these are byteswapped / wordswapped, we have to align them so that each can be swapped individually
+			int alignment = m_byteswapped ? 2 : m_wordswapped ? 4 : 1;
+			int alignmentMiss = m_customItemTables[i].size() % alignment;
+			if (alignmentMiss != 0) {
+				int oldSize = m_customItemTables[i].size();
+				m_customItemTables[i].resize(oldSize + alignment - alignmentMiss);
+				for (int j = oldSize; j < m_customItemTables[j].size(); i++) m_customItemTables[i][j] = GameInfo::NO_ITEM;
+			}
 			uint32_t romOffset = AddDataVec(m_customItemTables[i]);
 			//adjust offset in info struct
 			for (auto& info : m_customIInfoTable) {
