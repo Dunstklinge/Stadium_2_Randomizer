@@ -132,6 +132,8 @@
     <ClCompile Include="Constants.cpp" />
     <ClCompile Include="Crc.cpp" />
     <ClCompile Include="CustomCode.cpp" />
+    <ClCompile Include="CustomTrainerDefs.cpp" />
+    <ClCompile Include="DefFaces.cpp" />
     <ClCompile Include="DefPokemon.cpp" />
     <ClCompile Include="DefRoster.cpp" />
     <ClCompile Include="DefText.cpp" />
@@ -162,6 +164,8 @@
     <ClInclude Include="Constants.h" />
     <ClInclude Include="Crc.h" />
     <ClInclude Include="CustomRosterInfo.h" />
+    <ClInclude Include="CustomTrainerDefs.h" />
+    <ClInclude Include="DefFaces.h" />
     <ClInclude Include="DefGenTable.h" />
     <ClInclude Include="DefPokemon.h" />
     <ClInclude Include="DefRoster.h" />

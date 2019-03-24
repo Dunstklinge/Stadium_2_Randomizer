@@ -87,9 +87,7 @@ DefTrainer TrainerGenerator::Generate(const DefTrainer & from)
 		GameInfo::PokemonId validSpecies[256];
 		unsigned int validSpeciesN = 0;
 
-		
-							
-		
+
 		const GameInfo::PokemonId* filterList;
 		unsigned int filterListN;
 		if (gen.speciesFilterBuffer) {

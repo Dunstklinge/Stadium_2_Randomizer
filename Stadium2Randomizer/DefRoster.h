@@ -35,7 +35,7 @@ public:
 		uint8_t unknown2;
 		uint8_t unknown3;
 	
-		DefPokemon pokemon[];
+		DefPokemon pokemon[1];
 	};
 
 	struct TrainerList {
@@ -44,7 +44,7 @@ public:
 		uint8_t unknown2;
 		uint8_t unknown3;
 	
-		DefTrainer trainers[];
+		DefTrainer trainers[1];
 
 	public:
 		//I used to think that DefTrainer has as many pokemon as needed and thus varying sizes.

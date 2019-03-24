@@ -12,6 +12,7 @@ CMain program;
 
 BOOL CMain::InitInstance()
 {
+	
 	CWinApp::InitInstance();
 
 	mainDialog = new CMainDialog();

@@ -1,0 +1,4 @@
+the game can only deal with 3 different expressions per face.
+i dont know why, but more crash the game.
+
+It LOOKS like its possible to use 2 different faces within the same trainer defintion however, which might be a way to get around that limitation

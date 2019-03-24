@@ -102,6 +102,12 @@
     <ClCompile Include="CustomCode.cpp">
       <Filter>CustomData</Filter>
     </ClCompile>
+    <ClCompile Include="DefFaces.cpp">
+      <Filter>Structures</Filter>
+    </ClCompile>
+    <ClCompile Include="CustomTrainerDefs.cpp">
+      <Filter>Configs</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DefPokemon.h">
@@ -184,6 +190,12 @@
     </ClInclude>
     <ClInclude Include="CustomCode.h">
       <Filter>CustomData</Filter>
+    </ClInclude>
+    <ClInclude Include="DefFaces.h">
+      <Filter>Structures</Filter>
+    </ClInclude>
+    <ClInclude Include="CustomTrainerDefs.h">
+      <Filter>Configs</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

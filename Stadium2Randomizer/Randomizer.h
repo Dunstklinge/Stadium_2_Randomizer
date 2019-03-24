@@ -1,15 +1,16 @@
 #pragma once
 
-#include "Constants.h"
-#include "DefRoster.h"
-#include "DefText.h"
-#include "CustomRosterInfo.h"
-
 #include <vector>
 #include <stdint.h>
 #include <fstream>
 #include <functional>
 #include <array>
+
+#include "Constants.h"
+#include "DefRoster.h"
+#include "DefText.h"
+#include "CustomRosterInfo.h"
+#include "CustomTrainerDefs.h"
 
 
 class CMainDialog;
@@ -58,21 +59,27 @@ private:
 
 	DefRoster* m_romRoster;
 	DefText* m_romText;
-	std::vector<CustomRosterInfo>		 m_customRInfoTable;  //sorted from largest to smallest
-	std::vector<std::vector<uint8_t>> m_customRentalTables;	  //indexed by rentalOffset, which is used as index temporarily
-															  //uint8_t -> DefRoster::PokemonList, i.e 4 bytes, then DefPokemon array
-	std::vector<CustomItemInfo>				   m_customIInfoTable; //sorted from largest to smallest
-	std::vector<std::vector<GameInfo::ItemId>> m_customItemTables; //indexed by itemPtr, which is used as index temporarily
+	std::vector<CustomRosterInfo>				m_customRInfoTable;		//sorted from largest to smallest
+	std::vector<std::vector<uint8_t>>			m_customRentalTables;	//indexed by rentalOffset, which is used as index temporarily
+																		//uint8_t -> DefRoster::PokemonList, i.e 4 bytes, then DefPokemon array
+	std::vector<CustomItemInfo>					m_customIInfoTable;		//sorted from largest to smallest
+	std::vector<std::vector<GameInfo::ItemId>>	m_customItemTables;		//indexed by itemPtr, which is used as index temporarily
+	std::vector<CustomFaceInfo>					m_customFInfoTable;
+	std::vector<std::vector<uint8_t>>			m_customFaceTable;		//list of custom faces to be inserted. uint8_t -> actually DefFace
+	std::vector<CustomTrainerDefs::Trainer>		m_customTrainers;
 	uint8_t* m_customItemRedirectCode;
 	uint8_t* m_customItemInjectCode;
 	uint8_t* m_customRentalRedirectCode;
 	uint8_t* m_customRentalInjectCode;
+	uint8_t* m_customFaceRedirectCode;
+	uint8_t* m_customFaceInjectCode;
 
 	CupRules m_cupRules;
 	char m_romRegion;	//E = US, P = EU, rest unsupported
 
 	uint32_t m_genItemTableOffset;
 	uint32_t m_genRosterTableOffset;
+	uint32_t m_genFaceTableOffset;
 
 
 	bool AnalyseRom();
@@ -102,6 +109,14 @@ private:
 	static constexpr uint32_t naRentalRosterFuncAddr = 0xFA740;
 	static constexpr uint32_t euRentalRosterFuncAddr = 0xFA890;
 	inline uint32_t RentalRosterFuncAddr() { return m_romRegion == 'E' ? naRentalRosterFuncAddr : euRentalRosterFuncAddr; }
+
+	static constexpr uint32_t naFaceRedirectAdr = 0x142758;
+	static constexpr uint32_t euFaceRedirectAdr = 0x1428C8;
+	inline uint32_t FaceRedirectAdr() { return m_romRegion == 'E' ? naFaceRedirectAdr : euFaceRedirectAdr; }
+
+	static constexpr uint32_t naFace2RedirectAdr = 0x4ECF0;
+	static constexpr uint32_t euFace2RedirectAdr = 0x4ECF0;
+	inline uint32_t Face2RedirectAdr() { return m_romRegion == 'E' ? naFace2RedirectAdr : euFace2RedirectAdr; }
 
 	static constexpr uint32_t emptySpace1Start = 0x2589400;
 	static constexpr uint32_t emptySpace1End = 0x258d000;

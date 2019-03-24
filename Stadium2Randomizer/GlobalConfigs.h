@@ -2,6 +2,7 @@
 
 #include "PokemonNicknames.h"
 #include "TrainerNames.h"
+#include "CustomTrainerDefs.h"
 
 namespace GlobalConfig {
 
@@ -9,5 +10,6 @@ namespace GlobalConfig {
 
 	extern PokemonNicknames PokemonNicks;
 	extern TrainerNames TrainerNicks;
+	extern CustomTrainerDefs CustomTrainers;
 
 }

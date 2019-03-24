@@ -16,7 +16,8 @@ public:
 	struct StringList {
 		uint32_t nStrings;
 		uint32_t stringOffsets[1]; //nStrings times
-		char strings[0]; //nStrings times, apparently without padding
+		char strings[1]; //nStrings times, apparently without padding
+
 		char* operator[](int n) { return ((char*)this) + stringOffsets[n]; }
 	};
 

@@ -35,3 +35,16 @@ public:
 		SwitchEndianness(itemPtr);
 	}
 };
+
+
+class CustomFaceInfo
+{
+public:
+	uint32_t faceOffset;			//relative to start of original table
+	uint32_t faceLength;			//table length
+
+	inline void Curate(bool forth) {
+		SwitchEndianness(faceOffset);
+		SwitchEndianness(faceLength);
+	}
+};

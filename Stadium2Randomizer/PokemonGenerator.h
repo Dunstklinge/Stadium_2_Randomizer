@@ -60,7 +60,7 @@ public:
 	inline void ClearAllFilters() {
 		speciesFilter = nullptr, speciesFilterBuffer = nullptr;
 		itemFilter = nullptr, itemFilterBuffer = nullptr;
-		minOneMoveFilter = nullptr, minOneMoveFilterBuffer = nullptr;
+		//minOneMoveFilter = nullptr, minOneMoveFilterBuffer = nullptr;
 		generalMoveFilter = nullptr, generalMoveFilterBuffer = nullptr;
 	}
 private:

@@ -11,3 +11,12 @@
 .create "shortest.bin", 0x8000F800 //dont actually know where
 	.include "shortest.asm", "UTF-8"
 .close
+
+.create "faceinjection.bin", 0x8000F800 //dont actually know where
+	.include "faceinjection.asm", "UTF-8"
+.close
+
+.create "faceinjection2.bin", 0x8000F800 //dont actually know where
+	.include "faceinjection2.asm", "UTF-8"
+.close
+

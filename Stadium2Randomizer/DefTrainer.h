@@ -13,9 +13,9 @@ class DefTrainer
 public:
 
 	uint8_t trainerCat;
-	uint8_t trainerId;
+	uint8_t trainerId;	//not actually unique, just name?
 	uint8_t unknown1;
-	uint8_t textId;
+	uint8_t textId;  //this one is either 0 or unique
 	uint8_t nPokes;
 	uint8_t unknown2;
 	uint8_t unknown3;

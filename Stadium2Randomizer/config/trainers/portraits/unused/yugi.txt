@@ -1,0 +1,38 @@
+NAME: Yugi
+1:  <FACE,yugi,smug>Are you possessed by the spirit of a Pharaoh who wins all the 
+games he plays? Oh wait, that's meeee!
+2:  <FACE,yugi,grin>I challenge you to a childrens cockfight!
+3:  <FACE,yugi,smug>Let's make this a clean fight, and may the best Pharaoh win!
+4:  <FACE,yugi,grin>I summon #26 in attack mode!
+5:  <FACE,yugi,grin>I summon #26 in defense mode!
+6:  <FACE,yugi,smug>My Team has no pathetic Pokemon! But it does have:
+The unstoppable #26!
+7:  <FACE,yugi,grin>Just what i needed. Go, #26!
+8:  <FACE,yugi,grin>Go, #26!
+9:  <FACE,yugi,grin>Don't worry #26, im used to being disappointed. I have Kuriboh
+in my deck! Kuriboh!
+10: <FACE,yugi,shock>No, not #26!
+11: <FACE,yugi,determined>You did well, #26.
+12: <FACE,yugi,determined>TODO, recall
+13: <FACE,yugi,disbelief>TODO, pc impressive
+14: <FACE,yugi,smug>TODO, yugi impressive
+15: <FACE,yugi,grin>Just as i had planned.
+16: <FACE,yugi,disbelief>And i thought i had too much luck.
+17: <FACE,yugi,disbelief>TODO, yugi got haxed
+18: <FACE,yugi,grin>TODO, yugi haxed
+19: <FACE,yugi,shock>Impossible! I never lose!
+20: <FACE,yugi,smug>King of games, bitch!
+21: <FACE,yugi,disbelief>No, not #26!
+22: <FACE,yugi,determined>TODO, smalltalk or reaction
+23: <FACE,yugi,smug>TODO, smalltalk or reaction
+24: <FACE,yugi,grin>TODO, smalltalk or reaction
+25: <FACE,yugi,grin>TODO, smalltalk or reaction
+26: <FACE,yugi,smug>Im am the Pharaoh! The King of Games! And you, you are nothing!
+27: <FACE,yugi,smug>Don't feel so bad, you did almost as well as Joe!
+28: <FACE,yugi,season0>Ace of Diamonds!
+29: <FACE,yugi,disbelief>TODO yugi lost
+30: <FACE,yugi,disbelief>TODO yugi lost
+31: <FACE,yugi,season0>TODO yugi lost
+32: <FACE,yugi,grin>TODO draw
+33: <FACE,yugi,season0>TODO pc gave up
+40: <FACE,yugi,determined>

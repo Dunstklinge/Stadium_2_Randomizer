@@ -17,7 +17,12 @@ always valid:
 
 801883D0: loads cup rentals et al based on rental table index (a1) from rule+rental+thensome struct		FA740 in rom (FA890 in E)
 80157350: same function when in GC or Rival fight
-800049E0: reads table offset and length, but for many more things than just the rental table
+800049E0: reads table offset and length, but for many more things than just the rental table			
+
+80157598 calling 8004E0F0: same as above (during GC or Rival), but for faces table only?				142758 in rom
+80186C28 calling 8004E0F0: during games, but seems to behave differntly inject wise?
+8015803C calling 8004E0F0: during endscreen
+8015E7E8 calling 8004E0F0: during select screen
 
 80066B98 calls 8006A600: takes cup type, ball type, round (0|1), returns rulerentalthensomestructs thisIndex for this ruleset; then calls 8006A444 with this index
 80067C38 calls 8006A444: GC version, calls 8006A444 directly with 6

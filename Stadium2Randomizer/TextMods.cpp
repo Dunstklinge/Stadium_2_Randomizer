@@ -16,7 +16,7 @@ void TextMods::Apply(DefText * buffer, DefText* newBuffer)
 {
 	uint8_t* byteBuffer = (uint8_t*)buffer, *newByteBuffer = (uint8_t*)newBuffer;
 	//sort changes first
-	std::sort(changes.begin(), changes.end(), [](Change lhs, Change rhs) {
+	std::stable_sort(changes.begin(), changes.end(), [](Change lhs, Change rhs) {
 		return lhs.textTable < rhs.textTable || lhs.textTable == rhs.textTable && lhs.stringNumber < rhs.stringNumber;
 	});
 
