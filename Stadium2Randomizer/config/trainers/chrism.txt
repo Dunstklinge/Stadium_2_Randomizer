@@ -22,7 +22,7 @@ NAME:	360Chrism
 18:		<FACE,chrism,icon>And now we set up.
 19:		<FACE,chrism,icon>We're gonna be here for hours.
 20:		<FACE,chrism,icon>We're dead.
-21:		<FACE,chrism,icon>[[npc mon #26 fained]]
+21:		<FACE,chrism,icon>...
 22-25:	<FACE,chrism,icon>Why would i teach Smeargle Flame Wheel, Steelix resists that.
 22-25:	<FACE,chrism,icon><WAZA,80,2>(I'm not actually a dancer)
 22-25:	<FACE,chrism,icon><WAZA,87,2>Please dont miss
