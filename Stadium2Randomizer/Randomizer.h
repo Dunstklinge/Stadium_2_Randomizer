@@ -115,15 +115,49 @@ private:
 	inline uint32_t FaceRedirectAdr() { return m_romRegion == 'E' ? naFaceRedirectAdr : euFaceRedirectAdr; }
 
 	static constexpr uint32_t naFace2RedirectAdr = 0x4ECF0;
-	static constexpr uint32_t euFace2RedirectAdr = 0x4ECF0;
+	static constexpr uint32_t euFace2RedirectAdr = 0x4EDD0;
 	inline uint32_t Face2RedirectAdr() { return m_romRegion == 'E' ? naFace2RedirectAdr : euFace2RedirectAdr; }
 
-	static constexpr uint32_t emptySpace1Start = 0x2589400;
+	/*static constexpr uint32_t emptySpace1Start = 0x2589400;
 	static constexpr uint32_t emptySpace1End = 0x258d000;
 	static constexpr uint32_t emptySpace1Size = emptySpace1End - emptySpace1Start;
 
-	static constexpr uint32_t emptySpace2Start = 0x16061c0;
+	static constexpr uint32_t emptySpace2Start = 0x16061c0;	//eu 1606560
 	static constexpr uint32_t emptySpace2End = 0x1638000;
-	static constexpr uint32_t emptySpace2Size = emptySpace2End - emptySpace2Start;
+	static constexpr uint32_t emptySpace2Size = emptySpace2End - emptySpace2Start;*/
+
+
+	struct EmptySpace {
+		uint32_t offStart;
+		uint32_t offEnd;
+		uint32_t size;
+		constexpr EmptySpace(uint32_t offStart, uint32_t offEnd) : offStart(offStart), offEnd(offEnd), size(offEnd - offStart) {}
+	};
+	static const inline EmptySpace emptySpaces[] = {
+		{ 0x2589400, 0x258d000 },
+		{ 0x1606560, 0x1638000 },
+		{ 0x2222600, 0x2230000 },
+		{ 0x225a820, 0x2268000 },
+		{ 0x188a900, 0x1898000 },
+	};
+
+	/*
+	FF-areas
+	0x16061c0 - 0x1638000 (0x31e40)
+	0x16fb090 - 0x1708000 (0xcf70)
+	0x188a8cc - 0x1898000 (0xd734)
+	0x1d63410 - 0x1d70000 (0xcbf0)
+	0x1e2de72 - 0x1e40000 (0x1218e)
+	0x1e69154 - 0x1e70000 (0x6eac)
+	0x1ffbee0 - 0x2000000 (0x4120)
+	0x2222590 - 0x2230000 (0xda70)
+	0x225a817 - 0x2268000 (0xd7e9)
+	0x2589400 - 0x258d000 (0x3c00)
+	0x2668100 - 0x266b000 (0x2f00)
+	0x2673668 - 0x2675000 (0x1998)
+	0x27e9e20 - 0x27ed000 (0x31e0)
+	0x2d77c80 - 0x2d7d000 (0x5380)
+	0x3fd1b30 - 0x3fd5000 (0x34d0)
+	*/
 };
 

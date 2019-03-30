@@ -103,7 +103,7 @@ here are the lines:
 1 - 3: introduction
 4 - 8: pokemon introduction (#26 is name)
 9 - 12: come back (defeated?) pokemon (#26 is name)
-13: ??? (player did impressive) (saw it when winning, but i also did 4x dmg on rhydon)
+13: ??? (player did impressive) (seems to be ohko or a really strong move)
 14: ??? (npc did impressive)
 15: npc crits
 16: pc crits

@@ -215,7 +215,7 @@ CustomTrainerDefs::Trainer CustomTrainerDefs::GenPermutation(int trainerId, std:
 		if (alts.lines.size() == 0) return nullptr;
 		int randomInt = Random::GetInt(1, alts.chanceTotal);
 		for (auto& line : alts.lines) {
-			if (line.chance <= randomInt) {
+			if (randomInt <= line.chance) {
 				TrainerData::TextLine* retVal = &data.stringTable[line.lineTableIndex];
 				//remove used line from list
 				alts.chanceTotal -= line.chance;
@@ -240,11 +240,12 @@ CustomTrainerDefs::Trainer CustomTrainerDefs::GenPermutation(int trainerId, std:
 			const std::string& usedChar = portraitFiles[selectedLine->faceIndex].charName;
 			const std::string& usedExpr = portraitFiles[selectedLine->faceIndex].charExpressions[selectedLine->exprIndex];
 			std::string usedPortraitPath = folder + "portraits\\" + usedChar + "_" + usedExpr + ".png";
-			unsigned int usedPortraitCharPartEnd = usedPortraitPath.size() - usedExpr.size() - 4 - 1 - 1; //index of the _
+			unsigned int usedPortraitCharPartEnd = usedPortraitPath.size() - usedExpr.size() - 4 - 1; //index of the _
 			int charId;
 			int exprId;
 			auto charIt = std::find_if(usedPortraitList.begin(), usedPortraitList.end(),
-				[&](const std::vector<std::string>& vec) { return strncmp(vec[0].c_str(), usedPortraitPath.c_str(), usedPortraitCharPartEnd) == 0; }
+				[&](const std::vector<std::string>& vec) { return strncmp(vec[0].c_str(), usedPortraitPath.c_str(), usedPortraitCharPartEnd) == 0 && 
+																	*(vec[0].c_str() + usedPortraitCharPartEnd) == '_'; }
 			);
 			if (charIt == usedPortraitList.end()) {
 				std::vector<std::string> exprList;

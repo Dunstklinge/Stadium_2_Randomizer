@@ -32,6 +32,8 @@ Randomizer::~Randomizer()
 	delete[] m_customItemInjectCode, m_customItemInjectCode = nullptr;
 	delete[] m_customRentalRedirectCode, m_customRentalRedirectCode = nullptr;
 	delete[] m_customRentalInjectCode, m_customRentalInjectCode = nullptr;
+	delete[] m_customFaceInjectCode, m_customFaceInjectCode = nullptr;
+	delete[] m_customFaceRedirectCode, m_customFaceRedirectCode = nullptr;
 }
 
 void Randomizer::Randomize(const CString& path, CMainDialog * settings)
@@ -710,9 +712,10 @@ void Randomizer::RandomizeTrainers()
 	//
 	// shuffle in custom trainers if reqeusted
 	//
+	int maxN = min(atoi(m_settings->strCustomTrainerN), GlobalConfig::CustomTrainers.customTrainers.size());
 	for (int i = 0; i < shuffledIds.size(); i++) {
-		if (customTrainersUsed.size() < GlobalConfig::CustomTrainers.customTrainers.size()
-			&& (Random::GetInt(0, shuffledIds.size()-1-i + GlobalConfig::CustomTrainers.customTrainers.size()) > shuffledIds.size()-1-i))
+		if (customTrainersUsed.size() < maxN
+			&& (Random::GetInt(0, shuffledIds.size()-1-i + maxN-customTrainersUsed.size()) > shuffledIds.size()-1-i))
 		{
 			//replace with custom trainer
 			int customN = GlobalConfig::CustomTrainers.customTrainers.size();
@@ -720,7 +723,8 @@ void Randomizer::RandomizeTrainers()
 			//get unused trainer id (adjust random number)
 			int randomIndex = Random::GetInt(0, customN - usedN - 1);
 			for (int i = 0; i < usedN; i++) {
-				if (customTrainersUsed[i] >= randomIndex) randomIndex++;
+				if (customTrainersUsed[i] == randomIndex) randomIndex++;
+				else break;
 			}
 			customTrainersUsed.push_back(randomIndex);
 			std::sort(customTrainersUsed.begin(), customTrainersUsed.end());
@@ -740,7 +744,7 @@ void Randomizer::RandomizeTrainers()
 			}
 		}
 	}
-	
+
 
 	//
 	// build portrait list of used custom trainers
@@ -756,6 +760,9 @@ void Randomizer::RandomizeTrainers()
 		m_customFaceTable[i].resize(totalSize);
 		DefFaces::Faces* faces = (DefFaces::Faces*)m_customFaceTable[i].data();
 		faces->nFaces = face.size();
+		if (faces->nFaces > 3) {
+			throw std::exception("faces can only have up to 3 expressions!");
+		}
 		for (int j = 0; j < face.size(); j++) {
 			CImage img;
 			HRESULT res = img.Load(face[j].c_str());
@@ -774,6 +781,8 @@ void Randomizer::RandomizeTrainers()
 				faces->offsets[j] = oldSize + 8; //this offset points to pixels for some reason
 				face->width = img.GetWidth();
 				face->height = img.GetHeight();
+				face->width = 64;
+				face->height = 64;
 				face->unknown = 0x20000;
 				face->SetPixelsFromImage(img);
 			}
@@ -784,7 +793,6 @@ void Randomizer::RandomizeTrainers()
 
 	m_genLog << "... generating trainers done!\n";
 
-	
 	//
 	//apply text changes
 	//
@@ -924,13 +932,13 @@ void Randomizer::SortInjectedData()
 	bool insertRentalData = m_customRInfoTable.size() > 1;
 	bool insertFaceData = m_customFaceTable.size() > 0;
 
-	const uint32_t borders[][2] = { { emptySpace1Start, emptySpace1End }, { emptySpace2Start, emptySpace2End } };
-	uint32_t offsetIts[_countof(borders)] = { borders[0][0], borders[1][0] };
+	uint32_t offsetIts[_countof(emptySpaces)];
+	for (int i = 0; i < _countof(emptySpaces); i++) offsetIts[i] = emptySpaces[i].offStart;
 	auto AddData = [&](uint8_t* buffer, unsigned int size) {
 		//find a free space where it still fits
 		for (int i = 0; i < _countof(offsetIts); i++) {
 			Align(offsetIts[i]);
-			uint32_t remainingSpace = borders[i][1] - offsetIts[i];
+			uint32_t remainingSpace = emptySpaces[i].offEnd - offsetIts[i];
 			if (remainingSpace < size) continue;
 			//fits
 			uint32_t offset = offsetIts[i];
@@ -1022,7 +1030,7 @@ void Randomizer::SortInjectedData()
 			if (alignmentMiss != 0) {
 				int oldSize = m_customItemTables[i].size();
 				m_customItemTables[i].resize(oldSize + alignment - alignmentMiss);
-				for (int j = oldSize; j < m_customItemTables[j].size(); i++) m_customItemTables[i][j] = GameInfo::NO_ITEM;
+				for (int j = oldSize; j < m_customItemTables[i].size(); j++) m_customItemTables[i][j] = GameInfo::NO_ITEM;
 			}
 			uint32_t romOffset = AddDataVec(m_customItemTables[i]);
 			//adjust offset in info struct
@@ -1054,10 +1062,13 @@ void Randomizer::SortInjectedData()
 			//adjust length and offset bad on original table position
 			m_customFInfoTable[i].faceLength = m_customFaceTable[i].size();
 			m_customFInfoTable[i].faceOffset = romOffset - DefFaces::offStart;
+			m_genLog << "placed custom face nr. " << i << " at " << romOffset << " - " << romOffset + m_customFaceTable[i].size() << "\n";
 		}
 	}
-	m_genLog << "done placing custom data; used " << offsetIts[0] - borders[0][0] << "/" << borders[0][1] - borders[0][0] << " in space 1, "
-		<< offsetIts[1] - borders[1][0] << "/" << borders[1][1] - borders[1][0] << " in space 2\n";
+	m_genLog << "done placing custom data; used\n";
+	for (int i = 0; i < _countof(emptySpaces); i++) {
+		m_genLog << "\t" << offsetIts[i] - emptySpaces[i].offStart << " / " << emptySpaces[i].size << " in space " << i << "\n";
+	}
 	SetPartialProgress(0.6);
 
 	//now curate it all

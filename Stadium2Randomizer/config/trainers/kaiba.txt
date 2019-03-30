@@ -1,0 +1,44 @@
+NAME:	Kaiba
+1-3:	<FACE,kaiba,dismissive>Me? Battle you? I'd have more of a challenge playing solitaire.
+1-3:	<FACE,kaiba,dismissive>Why don't you look for an opponent you can actually beat?
+Like an infant, or a monkey.
+1-3:	<FACE,kaiba3,smug>I'm Seto Kaiba! Accept no substitutes!
+4-8:	<FACE,kaiba,dismissive>It's not a Blue-Eyes, but it will have to do.
+4-8:	<FACE,kaiba2,determined>I play #26 in attack mode!
+4-8:	<FACE,kaiba2,determined>I play #26 in defense mode!
+4-8:	<FACE,kaiba3,dismissive>This game really doesn't have enough dragons.
+4-8:	<FACE,kaiba2,grin>Let me show you a real monster. I summon 
+#26!
+9-12:	<FACE,kaiba,dismissive>Hmpf, Whatever.
+9-12:	<FACE,kaiba2,determined>I've grown tired of your ridiculous jokes!
+9-12:	<FACE,kaiba2,grin>Let me show you a real monster. I summon #26!
+9-12:	<FACE,kaiba3,smug>It's a shame i cant sacrifice you to summon my 
+Blue-Eyes.
+13:		<FACE,kaiba2,smug>You just made a decent move! I guess there's a first time 
+for everything!
+14:		<FACE,kaiba2,grin>Looks like one of us was using his brain today, 
+and i'm not talking about you!
+15:		<FACE,kaiba3,attack>I make my own fate!
+16:		<FACE,kaiba3,dismissive>What a cheap trick.
+17:		<FACE,kaiba2,determined>That lame strategy may work against a dork like Wheeler, 
+but i'm in a different league!
+18:		<FACE,kaiba2,smug>Now your Creature is as puny as your mind!
+18: 	<FACE,kaiba2,grin>Let's see how your disease-ridden team affects you now.
+19:		<FACE,kaiba,monkaS>Well, that was highly improbable.
+20:		<FACE,kaiba,dismissive>There is no honor in beating such a weak opponent.
+21:		<FACE,kaiba,monkaS>That's not possible!
+22-25:	<FACE,kaiba3,attack><WAZA,182,2>Activating my Trap Card: Negate Attack!
+22-25:	<FACE,kaiba3,attack><WAZA,63,2>White Lightning Attack!
+22-25:	<FACE,kaiba3,attack><WAZA,90,2>With one earth-shattering blast, I will defeat you!
+22-25:	<FACE,kaiba2,grin>If you think my Blue-Eyes is large, wait until you see my ego!
+26-28:	<FACE,kaiba,dismissive>That was just pathetic.
+26-28:	<FACE,kaiba2,grin>You know what they say: if at first you don't succeed, you're 
+not Seto Kaiba
+26-28:	<FACE,kaiba3,smug>You're a third rate trainer with a fourth rate team
+29-31:	<FACE,kaiba3,dismissive>Hmpf, this game doesn't have nearly enough Dragons.
+29-31:	<FACE,kaiba3,dismissive>I'm gonna pretend that this never happened. Alongside most of GX,
+some of 5Ds and all of ZEXALs.
+29-31:	<FACE,kaiba3,attack>As President of Kaiba-Corp i declare this match invalid!
+32:		<FACE,kaiba3,dismissive>A draw? Which idiot designed this game?
+33:		<FACE,kaiba2,smug>If you wanted my autograph all you had to do was ask for it!
+40:		<FACE,kaiba,dismissive>
