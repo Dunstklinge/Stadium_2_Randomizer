@@ -597,6 +597,12 @@ void Randomizer::RandomizeTrainers()
 		tgen.minLevel = ruleMap[i - 2]->minLevel;
 		tgen.maxLevel = ruleMap[i - 2]->maxLevel;
 		tgen.levelSum = ruleMap[i - 2]->levelSum;
+		if (ruleMap[i - 2].rule == &m_cupRules[GLC]) {
+			tgen.gen.changeLevel = true; //always adjust level for glc ruleset 
+		}
+		else {
+			tgen.gen.changeLevel = m_settings->trainerRandLevels;
+		}
 		if (m_settings->legalMovesOnly) {
 			if (ruleMap[i - 2]->legalMoveFilter) {
 				using namespace std::placeholders;
@@ -691,12 +697,13 @@ void Randomizer::RandomizeTrainers()
 			}
 
 			DefTrainer newDef = tgen.Generate(trainerIt->trainers[j]);
-
-			//restore trainer specific options
 			if (m_settings->min1Buttons == 5) 
 				for(int i = 0; i < newDef.nPokes; i++)
 					{ newDef.pokemon[i].move1 = newDef.pokemon[i].move2 = newDef.pokemon[i].move3 = newDef.pokemon[i].move4 = GameInfo::METRONOME; }
+
 			trainerIt->trainers[j] = newDef;
+
+			//restore trainer specific options
 			if (isBoss) {
 				tgen.stayCloseToBST = m_settings->stayCloseToBST;
 				tgen.gen.minOneMoveFilter = oldOneMoveFilter;
