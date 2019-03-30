@@ -633,6 +633,10 @@ void Randomizer::RandomizeTrainers()
 				break;
 			}
 
+			if (trainerIt->trainers[j].trainerCat == GameInfo::RIVAL) {
+				AddRival2Pokemon(trainerIt->trainers[j]);
+			}
+
 			//set trainer specific options
 			if (isBoss) {
 				tgen.stayCloseToBST = m_settings->bossStayCloseToBST;
@@ -806,6 +810,55 @@ void Randomizer::RandomizeTrainers()
 	delete[]((uint8_t*)newText);
 
 	SetPartialProgress(1.0);
+}
+
+void Randomizer::AddRival2Pokemon(DefTrainer& trainer) {
+	trainer.nPokes = 6;
+	
+	trainer.pokemon[3].species = GameInfo::ZAPDOS;
+	trainer.pokemon[3].item = GameInfo::MAGNET;
+	trainer.pokemon[3].move1 = GameInfo::THUNDERBOLT;
+	trainer.pokemon[3].move2 = GameInfo::DRILL_PECK;
+	trainer.pokemon[3].move3 = GameInfo::REST;
+	trainer.pokemon[3].move4 = GameInfo::SLEEP_TALK;
+	trainer.pokemon[3].happiness = 0;
+	trainer.pokemon[3].dvs = 0xFF;
+	trainer.pokemon[3].evAtk = trainer.pokemon[3].evDef = trainer.pokemon[3].evHp
+		= trainer.pokemon[3].evSpc = trainer.pokemon[3].evSpd = 0xFF;
+	trainer.pokemon[3].level = 100;
+	trainer.pokemon[3].unknown1 = trainer.pokemon[0].unknown1;
+	trainer.pokemon[3].unknown2 = trainer.pokemon[0].unknown2;
+	trainer.pokemon[3].unknown3 = trainer.pokemon[0].unknown3;
+
+	trainer.pokemon[4].species = GameInfo::SUICUNE;
+	trainer.pokemon[4].item = GameInfo::MYSTIC_WATER;
+	trainer.pokemon[4].move1 = GameInfo::SURF;
+	trainer.pokemon[4].move2 = GameInfo::TOXIC;
+	trainer.pokemon[4].move3 = GameInfo::PROTECT;
+	trainer.pokemon[4].move4 = GameInfo::ROAR;
+	trainer.pokemon[4].happiness = 0;
+	trainer.pokemon[4].dvs = 0xFF;
+	trainer.pokemon[4].evAtk = trainer.pokemon[4].evDef = trainer.pokemon[4].evHp
+		= trainer.pokemon[4].evSpc = trainer.pokemon[4].evSpd = 0xFF;
+	trainer.pokemon[4].level = 100;
+	trainer.pokemon[4].unknown1 = trainer.pokemon[1].unknown1;
+	trainer.pokemon[4].unknown2 = trainer.pokemon[1].unknown2;
+	trainer.pokemon[4].unknown3 = trainer.pokemon[1].unknown3;
+
+	trainer.pokemon[5].species = GameInfo::CELEBI;
+	trainer.pokemon[5].item = GameInfo::TWISTEDSPOON;
+	trainer.pokemon[5].move1 = GameInfo::HEAL_BELL;
+	trainer.pokemon[5].move2 = GameInfo::RECOVER;
+	trainer.pokemon[5].move3 = GameInfo::LEECH_SEED;
+	trainer.pokemon[5].move4 = GameInfo::PSYCHIC_M;
+	trainer.pokemon[5].happiness = 0;
+	trainer.pokemon[5].dvs = 0xFF;
+	trainer.pokemon[5].evAtk = trainer.pokemon[5].evDef = trainer.pokemon[5].evHp
+		= trainer.pokemon[5].evSpc = trainer.pokemon[5].evSpd = 0xFF;
+	trainer.pokemon[5].level = 100;
+	trainer.pokemon[5].unknown1 = trainer.pokemon[5].unknown1;
+	trainer.pokemon[5].unknown2 = trainer.pokemon[5].unknown2;
+	trainer.pokemon[5].unknown3 = trainer.pokemon[5].unknown3;
 }
 
 void Randomizer::RandomizeItems()

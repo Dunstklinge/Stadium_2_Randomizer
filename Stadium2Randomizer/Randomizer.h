@@ -90,6 +90,8 @@ private:
 	void RandomizeItems();
 	void SortInjectedData();
 
+	void AddRival2Pokemon(DefTrainer& trainer);
+
 	int m_progressBarMin, m_progressBarMax;
 	void SetProgress(double percent);
 	double m_progressPartMinPercent, m_progressPartMaxPercent;

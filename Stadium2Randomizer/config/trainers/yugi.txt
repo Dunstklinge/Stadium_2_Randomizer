@@ -3,14 +3,14 @@ NAME:	Yami
 NAME:	Atem
 1-3:	<FACE,yugi,smug>Are you possessed by the spirit of a Pharaoh who wins all the 
 games he plays? Oh wait, that's meeee!
-1-3:	<FACE,yugi,smug>It's time to duel!
+1-3:	<FACE,yugi,determined>It's time to duel!
 1-3:	<FACE,yugi,smug>Let's make this a clean fight, and may the best Pharaoh win!
 1-3:	<FACE,yugi,smug>If you're not allready bowing to me, you are doing it wrong!
-4-8:	<FACE,yugi,smug>I summon #26 in attack mode!
-4-8:	<FACE,yugi,smug>I summon #26 in defense mode!
-4-8:	<FACE,yugi,smug>My Team has no pathetic Pokemon! But it does have:	The unstoppable #26!
-4-8:	<FACE,yugi,smug>Just what i needed. Go, #26!
-4-8:	<FACE,yugi,smug>Go, #26!
+4-8:	<FACE,yugi,determined>I summon #26 in attack mode!
+4-8:	<FACE,yugi,determined>I summon #26 in defense mode!
+4-8:	<FACE,yugi,determined>My Team has no pathetic Pokemon! But it does have:	The unstoppable #26!
+4-8:	<FACE,yugi,determined>Just what i needed. Go, #26!
+4-8:	<FACE,yugi,determined>Go, #26!
 9-12:	<FACE,yugi,smug>Don't worry #26, im used to being
 disappointed. I have Kuriboh in my deck! Kuriboh!
 9-12:	<FACE,yugi,disbelief>No, not #26!
@@ -24,7 +24,7 @@ disappointed. I have Kuriboh in my deck! Kuriboh!
 18:		<FACE,yugi,smug>You see, my #26 has a special ability!
 19:		<FACE,yugi,disbelief>Impossible! I never lose!
 20:		<FACE,yugi,smug>King of games, bitch!
-20:		<FACE,yugi,smug>That means i win! It's over!
+20:		<FACE,yugi,determined>That means i win! It's over!
 21:		<FACE,yugi,disbelief>No, not #26!
 22-25:	<FACE,yugi,determined><WAZA,153,2>I sacrifice my #26!
 22-25:	<FACE,yugi,smug><WAZA,118,2>Ah, Metronome! Truly the most skillfull of moves!
@@ -37,6 +37,6 @@ disappointed. I have Kuriboh in my deck! Kuriboh!
 29-31:	<FACE,yugi,disbelief>This match was even more bullshit than my duel against Raphael
 29-31:	<FACE,yugi,determined>I suppose I will have to learn to win without my bullshit main 
 character powers
-32:		<FACE,yugi,smug>My turn. I draw!
+32:		<FACE,yugi,determined>My turn. I draw!
 33:		<FACE,yugi,determined>You will never win if you are scared of losing!
 40:		<FACE,yugi,determined>
