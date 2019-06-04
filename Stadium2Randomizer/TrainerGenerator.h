@@ -17,6 +17,7 @@ public:
 	bool stayCloseToBST;
 	unsigned int stayCloseToBSTThreshold;
 
+	bool changePokes;
 	int minLevel;
 	int maxLevel;
 	int levelSum;

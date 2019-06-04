@@ -87,13 +87,16 @@ void Randomizer::RandomizeRom(const CString & path)
 	// randomize data
 	//
 
-	m_progressPartMinPercent = 0.0;
-	m_progressPartMaxPercent = 0.1;
-	RandomizeRegularRentals();
+	if (m_settings->randRentals) {
+		m_progressPartMinPercent = 0.0;
+		m_progressPartMaxPercent = 0.1;
+		RandomizeRegularRentals();
 
-	m_progressPartMinPercent = 0.1;
-	m_progressPartMaxPercent = 0.5;
-	RandomizeHackedRentals();
+	
+		m_progressPartMinPercent = 0.1;
+		m_progressPartMaxPercent = 0.5;
+		RandomizeHackedRentals();
+	}
 
 	m_progressPartMinPercent = 0.5;
 	m_progressPartMaxPercent = 0.9;
@@ -248,9 +251,9 @@ void Randomizer::RandomizeRegularRentals()
 	auto rentalIt = m_romRoster->rentalBegin();
 	PokemonGenerator pokeGen;
 	pokeGen.changeSpecies = false;
-	pokeGen.changeEvsIvs = true;
-	pokeGen.changeLevel = true;
-	pokeGen.changeMoves = true;
+	pokeGen.changeEvsIvs = m_settings->randEvIv;
+	pokeGen.changeLevel = m_settings->randLevels;
+	pokeGen.changeMoves = m_settings->randMoves;
 	pokeGen.changeItem = false;
 
 	pokeGen.randEvs = m_settings->randEvIv;
@@ -258,6 +261,7 @@ void Randomizer::RandomizeRegularRentals()
 	pokeGen.bstEvIvs = m_settings->rentalSpeciesEvIv;
 	pokeGen.statsUniformDistribution = m_settings->randEvIvUniformDist;
 	pokeGen.levelUniformDistribution = m_settings->randLevelsUniformDist;
+	pokeGen.changeHappiness = m_settings->randRentalHappiness;
 
 	{
 		using namespace std::placeholders;
@@ -346,6 +350,7 @@ void Randomizer::RandomizeHackedRentals()
 	pokeGen.bstEvIvs = m_settings->rentalSpeciesEvIv;
 	pokeGen.statsUniformDistribution = m_settings->randEvIvUniformDist;
 	pokeGen.levelUniformDistribution = m_settings->randLevelsUniformDist;
+	pokeGen.changeHappiness = m_settings->randRentalHappiness;
 
 	{
 		using namespace std::placeholders;
@@ -392,10 +397,8 @@ void Randomizer::RandomizeHackedRentals()
 		m_genLog << "generating rental table with " << nMons << " pokemon...\n";
 		
 		for (unsigned int i = 0; i < nMons; i++) {
-			DefPokemon newMon;
-			newMon.species = m_cupRules[cup].legalMonListN == 0 ? (GameInfo::PokemonId)(i + 1) : m_cupRules[cup].legalMonList[i];
-			newMon.item = GameInfo::NO_ITEM;
-			newMon = pokeGen.Generate(newMon);
+			GameInfo::PokemonId species = m_cupRules[cup].legalMonListN == 0 ? (GameInfo::PokemonId)(i + 1) : m_cupRules[cup].legalMonList[i];
+			DefPokemon newMon = pokeGen.Generate(species);
 			if (m_settings->min1Buttons == 5) { newMon.move1 = newMon.move2 = newMon.move3 = newMon.move4 = GameInfo::METRONOME; }
 			*(DefPokemon*)&(table[i * sizeof(DefPokemon) + 4]) = newMon;
 			newMon.Print(m_genLog);
@@ -573,14 +576,19 @@ void Randomizer::RandomizeTrainers()
 		else if (m_settings->trainerMin1Atk) tgen.gen.minOneMoveFilter = std::bind(&FilterMoveByBP, _1, 1, 999);
 		else tgen.gen.minOneMoveFilter = nullptr;
 	}
+	tgen.changePokes = m_settings->trainerRandPoke;
 	tgen.usefulItem = m_settings->battleItems;
 	tgen.gen.changeLevel = m_settings->trainerRandLevels;
 	tgen.gen.changeSpecies = m_settings->trainerRandSpecies;
+	tgen.gen.changeMoves = m_settings->trainerRandMoves;
 	tgen.changeName = m_settings->trainerRandName;
 	tgen.changePokemonNicknames = m_settings->trainerRandMonNames;
-	tgen.gen.randEvs = m_settings->randEvIv;
-	tgen.gen.randIvs = m_settings->randEvIv;
-	tgen.gen.statsUniformDistribution = m_settings->randEvIvUniformDist;
+	tgen.gen.changeEvsIvs = m_settings->trainerRandEvIv;
+	tgen.gen.randEvs = m_settings->trainerRandEvIv;
+	tgen.gen.randIvs = m_settings->trainerRandEvIv;
+	tgen.gen.statsUniformDistribution = m_settings->trainerRandIvEvUniform;
+	tgen.gen.changeHappiness = m_settings->trainerRandHappiness;
+	tgen.gen.changeItem = m_settings->trainerRandItems;
 	tgen.gen.levelUniformDistribution = m_settings->randLevelsUniformDist;
 	tgen.stayCloseToBST = m_settings->stayCloseToBST;
 	tgen.stayCloseToBSTThreshold = 30;

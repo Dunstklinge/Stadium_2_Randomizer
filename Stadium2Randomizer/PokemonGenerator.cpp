@@ -66,7 +66,10 @@ DefPokemon PokemonGenerator::Generate(GameInfo::PokemonId species)
 	GenEvsIvs(mon);
 	GenHappiness(mon);
 	GenMoves(mon);
-	GenItem(mon);
+	if (changeItem)
+		GenItem(mon);
+	else
+		mon.item = GameInfo::NO_ITEM;
 
 	return mon;
 }

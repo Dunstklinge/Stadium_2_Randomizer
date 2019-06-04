@@ -50,8 +50,18 @@
 #define IDC_CBSHUFFLECROSS              1058
 #define IDC_CBSHUFFLECUSTOMS            1059
 #define IDC_CBSHUFFLECUSTOMSINTOREGS    1060
-#define IDC_EDIT1                       1061
 #define IDC_EDCUSTOMTRAINERN            1061
+#define IDC_CBRANDMOVES                 1062
+#define IDC_CB_TRAINER_RANDMOVES        1063
+#define IDC_CB_TRAINER_RANDITEMS        1065
+#define IDC_CB_TRAINER_RANDEVIV         1066
+#define IDC_CB_TRAINER_RANDHAPPINESS    1067
+#define IDC_CBRANDHAPPINESS             1069
+#define IDC_CB_TRAINER_REVIV_UNIFORM    1071
+#define IDC_CBRANDOMRENTALS             1072
+#define IDC_CB_TRAINER_RANDPOKE         1073
+#define IDC_CHECK1                      1074
+#define IDC_CB_TRAINER_RANDOM           1074
 
 // Next default values for new objects
 // 
@@ -59,7 +69,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        103
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1062
+#define _APS_NEXT_CONTROL_VALUE         1075
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
