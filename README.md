@@ -18,7 +18,7 @@ Current limitations:
 	
 - i actually have no idea if this would work on an actual cardrige. 
 	
-- only 3 custom trainers exist. i wanted to make more, but it turns out coming up with 40 lines of dialog isnt that easy.
+- only 2 custom trainers exist. i wanted to make more, but it turns out coming up with 40 lines of dialog isnt that easy.
 
 Big Thanks to the guy who made [this repo](https://github.com/pret/pokestadium/tree/master/stadiumgs). Half of the Information i needed came from there.
 
