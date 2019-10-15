@@ -32,6 +32,8 @@ namespace GameInfo {
 	};
 	static_assert(sizeof(Pokemon) == 22, "size missmatch");
 
+	//not actually part of the game, i made this myself
+	extern PokemonId PokemonPrevEvo[256];
 
 	//moves are defined from 0x98f20 to 0x9a4b2
 	uint8_t constexpr PokemonRawData[] = {

@@ -60,8 +60,28 @@
 #define IDC_CB_TRAINER_REVIV_UNIFORM    1071
 #define IDC_CBRANDOMRENTALS             1072
 #define IDC_CB_TRAINER_RANDPOKE         1073
-#define IDC_CHECK1                      1074
 #define IDC_CB_TRAINER_RANDOM           1074
+#define IDC_CBUBERTYPES                 1075
+#define IDC_EDIT1                       1076
+#define IDC_EDIT2                       1077
+#define IDC_CHECK2                      1078
+#define IDC_RADIO1                      1079
+#define IDC_RADIO2                      1080
+#define IDC_RADIO3                      1081
+#define IDC_CHECK3                      1082
+#define IDC_CHECK4                      1083
+#define IDC_CHECK5                      1084
+#define IDC_CHECK6                      1085
+#define IDC_CHECK7                      1086
+#define IDC_CHECK9                      1088
+#define IDC_CHECK10                     1089
+#define IDC_CHECK11                     1090
+#define IDC_CHECK12                     1091
+#define IDC_CHECK13                     1092
+#define IDC_CHECK14                     1093
+#define IDC_CHECK15                     1094
+#define IDC_CHECK16                     1095
+#define IDC_CHECK17                     1096
 
 // Next default values for new objects
 // 
@@ -69,7 +89,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        103
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1075
+#define _APS_NEXT_CONTROL_VALUE         1097
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

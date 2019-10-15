@@ -34,6 +34,11 @@ Randomizer::~Randomizer()
 	delete[] m_customRentalInjectCode, m_customRentalInjectCode = nullptr;
 	delete[] m_customFaceInjectCode, m_customFaceInjectCode = nullptr;
 	delete[] m_customFaceRedirectCode, m_customFaceRedirectCode = nullptr;
+	delete[] m_customStringsHelperInjectCode, m_customStringsHelperInjectCode = nullptr;
+	delete[] m_customStringsGetRedirectCode, m_customStringsGetRedirectCode = nullptr;
+	delete[] m_customStringsGetInjectCode, m_customStringsGetInjectCode = nullptr;
+	delete[] m_customStringsInitRedirectCode, m_customStringsInitRedirectCode = nullptr;
+	delete[] m_customStringsInitInjectCode, m_customStringsInitInjectCode = nullptr;
 }
 
 void Randomizer::Randomize(const CString& path, CMainDialog * settings)
@@ -199,6 +204,72 @@ void Randomizer::DoSwaps(void * buffer, size_t size)
 	}
 }
 
+
+int Randomizer::CustomStringData::AddStringOverride(uint8_t tableId, uint8_t strIdStart, const std::string& str)
+{
+	int ti;
+	for (ti = 0; ti < tables.size(); ti++)
+		if (tables[ti].tableId == tableId)
+			break;
+	if (ti == tables.size()) {
+		//need to add a new table
+		tables.push_back(CustomStringTableInfo{ (uint16_t)tableId, 0 });
+		sinfos.push_back(CustomStringInfo{strIdStart,strIdStart});
+		strings.push_back(std::vector<std::string>{});
+	}
+	if (sinfos[ti].start <= strIdStart && strIdStart < sinfos[ti].end) {
+		strings[ti][strIdStart - sinfos[ti].start] = str;
+	}
+	else if (sinfos[ti].end == strIdStart) {
+		sinfos[ti].end++;
+		strings[ti].push_back(str);
+	}
+	return ti;
+}
+
+void Randomizer::CustomStringData::Finalize()
+{
+	finalizedSinfoTables.clear();
+	finalizedSinfoTables.resize(sinfos.size());
+	for (int i = 0; i < finalizedSinfoTables.size(); i++) {
+		int totalstrlen = 0;
+		for (std::string& str : strings[i]) {
+			totalstrlen += str.size() + 1; //+1 for \0
+		}
+		//buffer as true CustomStringInfo
+		int size = sizeof(CustomStringInfo) + 4 * strings[i].size() + totalstrlen;
+		//round up to 64 bit because of DMA
+		size = (size + 7) / 8 * 8;
+		tables[i].tableSize = size;
+		finalizedSinfoTables[i].resize(size);
+		uint8_t* fullBuffer = finalizedSinfoTables[i].data();
+		CustomStringInfo*	info = (CustomStringInfo*)(fullBuffer);
+		uint32_t*			arr  = (uint32_t*)		 (fullBuffer + sizeof(CustomStringInfo));
+		uint8_t*			strs = (uint8_t*)		 (fullBuffer + sizeof(CustomStringInfo) + 4* strings[i].size());
+		uint8_t*			end  = (uint8_t*)		 (fullBuffer + size);
+		*info = sinfos[i];
+		for (std::string& str : strings[i]) {
+			uint32_t offset = strs - fullBuffer;
+			*arr++ = offset;
+			int len = str.size() + 1;
+			memcpy_s(strs, strs-end, str.c_str(), len);
+			strs += len;
+		}
+	}
+	//add end marker for table table
+	tables.push_back({ 0xFF,0xFF });
+	sinfos.clear();
+	strings.clear();
+}
+
+void Randomizer::CustomStringData::Curate(bool forth)
+{
+	for (auto& table : tables) table.Curate(forth);
+	for (auto& stringtable : finalizedSinfoTables) {
+		CustomStringInfo& sinfo = *((CustomStringInfo*)stringtable.data());
+		sinfo.Curate(forth);
+	}
+}
 
 bool Randomizer::AnalyseRom()
 {
@@ -462,105 +533,125 @@ void Randomizer::RandomizeTrainers()
 {
 	m_genLog << "Randomizing Trainers...:\n";
 
-	//rule map; see FormatNotes
-	struct {
-		const CupRule* rule;
-		int r; //0 for round 1, 1 for round 2
-		const CupRule& operator*() const { return *rule; }
-		const CupRule* operator->() const { return rule; }
-
-	} ruleMap[62];
-	for (int i = 2; i <= 5; i++) ruleMap[i - 2] = { &m_cupRules[POKECUP], 0 };
-	for (int i = 6; i <= 6; i++) ruleMap[i - 2] = { &m_cupRules[LITTLECUP], 0 };
-	for (int i = 7; i <= 7; i++) ruleMap[i - 2] = { &m_cupRules[PRIMECUP], 0 };
-	for (int i = 8; i <= 28; i++) ruleMap[i - 2] = { &m_cupRules[GLC], 0 };
-
-	for (int i = 29; i <= 32; i++) ruleMap[i - 2] = { &m_cupRules[POKECUP], 1 };
-	for (int i = 33; i <= 33; i++) ruleMap[i - 2] = { &m_cupRules[LITTLECUP], 1 };
-	for (int i = 34; i <= 34; i++) ruleMap[i - 2] = { &m_cupRules[PRIMECUP], 1 };
-	for (int i = 35; i <= 55; i++) ruleMap[i - 2] = { &m_cupRules[GLC], 1 };
-
-	for (int i = 56; i <= 56; i++) ruleMap[i - 2] = { &m_cupRules[CHALLENGECUP_1], 0 };
-	for (int i = 57; i <= 57; i++) ruleMap[i - 2] = { &m_cupRules[CHALLENGECUP_2], 0 };
-	for (int i = 58; i <= 58; i++) ruleMap[i - 2] = { &m_cupRules[CHALLENGECUP_3], 0 };
-	for (int i = 59; i <= 59; i++) ruleMap[i - 2] = { &m_cupRules[CHALLENGECUP_4], 0 };
-
-	for (int i = 60; i <= 60; i++) ruleMap[i - 2] = { &m_cupRules[CHALLENGECUP_1], 1 };
-	for (int i = 61; i <= 61; i++) ruleMap[i - 2] = { &m_cupRules[CHALLENGECUP_2], 1 };
-	for (int i = 62; i <= 62; i++) ruleMap[i - 2] = { &m_cupRules[CHALLENGECUP_3], 1 };
-	for (int i = 63; i <= 63; i++) ruleMap[i - 2] = { &m_cupRules[CHALLENGECUP_4], 1 };
-
 	//
-	//collect shuffle candidates
+	//Collect data
 	//
 
-	//data structures to collect them into
-	struct ShuffleData {
-		struct tmp {
-			uint32_t id;
-			uint32_t cat;
-			uint32_t text;
-
-			tmp(const DefTrainer& t) : id(t.trainerId), cat(t.trainerCat), text(t.textId) {  }
-			bool operator<(const tmp& rhs) const { return id < rhs.id || id == rhs.id && (cat < rhs.cat || cat == rhs.cat && (text < rhs.text)); }
-			bool operator==(const tmp& rhs) const { return id == rhs.id && cat == rhs.cat && text == rhs.text; }
+	struct TrainerInfo {
+		DefTrainer& def;		//def in file-buffer, can be edited in-place
+		CupRulesId cup;
+		int cupId;
+		enum {
+			ROUND_2 = 1,
+			IS_BOSS = 2,
+			LAST_OF_CUP = 4
 		};
-		std::vector<tmp> trainers;
-		unsigned int trainersNBenched = 0;	//the last N elements will still be considered to see if this trainer can be randomized, but is not a candidate anymore
-		std::vector<tmp> bosses;
-		unsigned int bossesNBenched = 0;
-		
+		int flags;
+		bool is(int flag) { return (flags & flag) == flag; }
 	};
-	struct CustomShuffleInfo {
-		uint32_t trainerId;
-		std::vector<DefTrainer*> trainersStructs;
-	};
-	std::vector<CustomShuffleInfo> shuffledIds;
-	std::vector<int> customTrainersUsed;
 
-	ShuffleData shuffle[2]; //for round 1 and round 2
+	std::vector<TrainerInfo> trainerList;					//list of all trainers to iterate through
+	std::vector<int> shuffleBosses[2], shuffleTrainers[2];	//trainers eligible for shuffling. bosses is empty if both are shuffled
+	std::vector<int> shuffleInCustoms[2];					//trainers eligible for replacement
+	trainerList.reserve(500);
+
+	auto isBoss = [](const DefTrainer& trainer) {
+		switch (trainer.trainerCat) {
+		case GameInfo::GYM_LEADER:
+		case GameInfo::ELITE_FOUR:
+		case GameInfo::CHAMPION:
+		case GameInfo::RIVAL:
+		case GameInfo::RIVAL17:
+			return true;
+			break;
+		case GameInfo::POKEMON_TRAINER:
+			return trainer.trainerId - 1 == TableInfo::RED;
+			break;
+		default:
+			break;
+		}
+		return false;
+	};
+
+	{
+		auto it = m_romRoster->trainerBegin() + 2;
+		auto addTrainer = [&, this](int cupId, CupRulesId crid, int round) {
+			for (int j = 0; j < it->nTrainers; j++) {
+				//
+				//gen trainer
+				DefTrainer& trainer = it->trainers[j];
+				bool bIsBoss = isBoss(trainer);
+				int flags = 0;
+				if (round == 1)				flags |= TrainerInfo::ROUND_2;
+				if (bIsBoss)				flags |= TrainerInfo::IS_BOSS;
+				if (j == it->nTrainers - 1) flags |= TrainerInfo::LAST_OF_CUP;
+
+				trainerList.push_back(TrainerInfo{ trainer, crid, cupId, flags });
+
+				//
+				//shuffle data
+				if (m_settings->shuffleRegulars || m_settings->shuffleBosses) {
+					if (!bIsBoss && m_settings->shuffleRegulars || bIsBoss && m_settings->shuffleBosses && m_settings->shuffleCross) {
+						shuffleTrainers[round].push_back(trainerList.size() - 1);
+					}
+					else if (bIsBoss && m_settings->shuffleBosses) {
+						shuffleBosses[round].push_back(trainerList.size() - 1);
+					}
+				}
+				
+				//
+				//custom replacement data
+				if (m_settings->mixCustomsInBosses || m_settings->mixCustomsInTrainers) {
+					if (m_settings->mixCustomsInBosses && bIsBoss || m_settings->mixCustomsInTrainers && !bIsBoss) {
+						shuffleInCustoms[round].push_back(trainerList.size() - 1);
+					}
+				}
+			}
+			++it;
+		};
+		for (int i = 2; i <= 5; i++) addTrainer(i, POKECUP, 0);
+		for (int i = 6; i <= 6; i++) addTrainer(i, LITTLECUP, 0);
+		for (int i = 7; i <= 7; i++) addTrainer(i, PRIMECUP, 0);
+		for (int i = 8; i <= 28; i++) addTrainer(i, GLC, 0);
+
+		for (int i = 29; i <= 32; i++) addTrainer(i, POKECUP, 1);
+		for (int i = 33; i <= 33; i++) addTrainer(i, LITTLECUP, 1);
+		for (int i = 34; i <= 34; i++) addTrainer(i, PRIMECUP, 1);
+		for (int i = 35; i <= 55; i++) addTrainer(i, GLC, 1);
+
+		for (int i = 56; i <= 56; i++) addTrainer(i, CHALLENGECUP_1, 0);
+		for (int i = 57; i <= 57; i++) addTrainer(i, CHALLENGECUP_2, 0);
+		for (int i = 58; i <= 58; i++) addTrainer(i, CHALLENGECUP_3, 0);
+		for (int i = 59; i <= 59; i++) addTrainer(i, CHALLENGECUP_4, 0);
+
+		for (int i = 60; i <= 60; i++) addTrainer(i, CHALLENGECUP_1, 1);
+		for (int i = 61; i <= 61; i++) addTrainer(i, CHALLENGECUP_2, 1);
+		for (int i = 62; i <= 62; i++) addTrainer(i, CHALLENGECUP_3, 1);
+		for (int i = 63; i <= 63; i++) addTrainer(i, CHALLENGECUP_4, 1);
+	}
+
+	//
+	// shuffle trainers if requested
+	//
+	auto shuffleArr = [&](std::vector<int>& ts) {
+		int size = ts.size();
+		for (int i = 0; i < size - 1; i++) {
+			int useIndex = Random::GetInt(i, size-1);
+			using namespace std;
+			swap(ts[i], ts[useIndex]);
+			swap(trainerList[i].def.trainerId, trainerList[useIndex].def.trainerId);
+			swap(trainerList[i].def.trainerCat, trainerList[useIndex].def.trainerCat);
+			swap(trainerList[i].def.textId, trainerList[useIndex].def.textId);
+		}
+	};
+	shuffleArr(shuffleBosses[0]);
+	shuffleArr(shuffleTrainers[0]);
+	shuffleArr(shuffleBosses[1]);
+	shuffleArr(shuffleTrainers[1]);
 
 	std::vector<std::vector<std::string>> customFaceList;
 	TextMods customTrainerTextMods;
 
-	
-	//actual collection
-	if(m_settings->shuffleRegulars || m_settings->shuffleBosses) {
-		auto it = m_romRoster->trainerBegin() + 2;
-		for (int i = 2; i <= 63; i++, ++it) {
-			for (int j = 0; j < it->nTrainers; j++) {
-				auto& trainer = it->trainers[j];
-				bool isBoss = false;
-				//for the purposes of shuffling, only gym leaders and rivals count as bosses
-				switch (trainer.trainerCat) {
-				case GameInfo::GYM_LEADER:
-				case GameInfo::ELITE_FOUR:
-				case GameInfo::CHAMPION:
-				case GameInfo::RIVAL:
-				case GameInfo::RIVAL17:
-					isBoss = true;
-					break;
-				case GameInfo::POKEMON_TRAINER:
-					isBoss = trainer.trainerId - 1 == TableInfo::RED;
-					break;
-				default:
-					break;
-				}
-				if (!isBoss && m_settings->shuffleRegulars || isBoss && m_settings->shuffleBosses && m_settings->shuffleCross) {
-					shuffle[ruleMap[i - 2].r].trainers.push_back(ShuffleData::tmp(trainer));
-				}
-				else if (isBoss && m_settings->shuffleBosses) {
-					shuffle[ruleMap[i - 2].r].bosses.push_back(ShuffleData::tmp(trainer));
-				}
-			}
-		}
-		
-
-		std::sort(shuffle[0].trainers.begin(), shuffle[0].trainers.end());
-		std::sort(shuffle[0].bosses.begin(), shuffle[0].bosses.end());
-		std::sort(shuffle[1].trainers.begin(), shuffle[1].trainers.end());
-		std::sort(shuffle[1].bosses.begin(), shuffle[1].bosses.end());
-	}
 
 	//
 	// set up trainer generator
@@ -576,6 +667,7 @@ void Randomizer::RandomizeTrainers()
 		else if (m_settings->trainerMin1Atk) tgen.gen.minOneMoveFilter = std::bind(&FilterMoveByBP, _1, 1, 999);
 		else tgen.gen.minOneMoveFilter = nullptr;
 	}
+	auto oldOneMoveFilter = tgen.gen.minOneMoveFilter;
 	tgen.changePokes = m_settings->trainerRandPoke;
 	tgen.usefulItem = m_settings->battleItems;
 	tgen.gen.changeLevel = m_settings->trainerRandLevels;
@@ -599,171 +691,132 @@ void Randomizer::RandomizeTrainers()
 	//
 	// randomize trainers with generator
 	//
-	auto trainerIt = m_romRoster->trainerBegin() + 2;
-	for (int i = 2; i <= 63; i++, ++trainerIt) {
+	CupRulesId lastRules = (CupRulesId)-1;
+	for (int i = 0; i < trainerList.size(); i++) {
+		auto& trainer = trainerList[i];
 		//set trainer generator rules to cup rules
-		tgen.minLevel = ruleMap[i - 2]->minLevel;
-		tgen.maxLevel = ruleMap[i - 2]->maxLevel;
-		tgen.levelSum = ruleMap[i - 2]->levelSum;
-		if (ruleMap[i - 2].rule == &m_cupRules[GLC]) {
-			tgen.gen.changeLevel = true; //always adjust level for glc ruleset 
-		}
-		else {
-			tgen.gen.changeLevel = m_settings->trainerRandLevels;
-		}
-		if (m_settings->legalMovesOnly) {
-			if (ruleMap[i - 2]->legalMoveFilter) {
-				using namespace std::placeholders;
-				tgen.gen.generalMoveFilter = std::bind(std::logical_and<bool>(),
-					std::bind(FilterLegalMovesOnly, _1, _2),
-					std::bind(ruleMap[i - 2]->legalMoveFilter, _1, _2));
+		if (trainer.cup != lastRules) {
+			lastRules = trainer.cup;
+
+			const CupRule& rules = m_cupRules[trainer.cup];
+			tgen.minLevel = rules.minLevel;
+			tgen.maxLevel = rules.maxLevel;
+			tgen.levelSum = rules.levelSum;
+			if (trainer.cup == GLC) {
+				tgen.gen.changeLevel = true; //always adjust level for glc ruleset 
 			}
 			else {
-				tgen.gen.generalMoveFilter = FilterLegalMovesOnly;
+				tgen.gen.changeLevel = m_settings->trainerRandLevels;
 			}
-		}
-		else 
-			tgen.gen.generalMoveFilter = ruleMap[i - 2]->legalMoveFilter;
-		tgen.gen.speciesFilterBuffer = ruleMap[i - 2]->legalMonList;
-		tgen.gen.speciesFilterBufferN = ruleMap[i - 2]->legalMonListN;
-
-		//iterate through trainers of this cup
-		auto oldOneMoveFilter = tgen.gen.minOneMoveFilter;
-		int nTrainers = trainerIt->nTrainers;
-		for (int j = 0; j < nTrainers; j++) {
-			bool isBoss = j == nTrainers - 1;
-			if (!isBoss) switch (trainerIt->trainers[j].trainerCat) {
-			case GameInfo::GYM_LEADER:
-			case GameInfo::ELITE_FOUR:
-			case GameInfo::CHAMPION:
-			case GameInfo::RIVAL:
-			case GameInfo::RIVAL17:
-				isBoss = true;
-				break;
-			case GameInfo::POKEMON_TRAINER:
-				isBoss = trainerIt->trainers[j].trainerId - 1 == TableInfo::RED;
-				break;
-			default:
-				break;
-			}
-
-			if (trainerIt->trainers[j].trainerCat == GameInfo::RIVAL) {
-				AddRival2Pokemon(trainerIt->trainers[j]);
-			}
-
-			//set trainer specific options
-			if (isBoss) {
-				tgen.stayCloseToBST = m_settings->bossStayCloseToBST;
-				using namespace std::placeholders;
-				if (tgen.gen.minOneMoveFilter == nullptr) {
-					tgen.gen.minOneMoveFilter = std::bind(FilterMoveByBP, _1, 60, 999);
+			if (m_settings->legalMovesOnly) {
+				if (rules.legalMoveFilter) {
+					using namespace std::placeholders;
+					tgen.gen.generalMoveFilter = std::bind(std::logical_and<bool>(),
+						std::bind(FilterLegalMovesOnly, _1, _2),
+						std::bind(rules.legalMoveFilter, _1, _2));
 				}
 				else {
-					tgen.gen.minOneMoveFilter = std::bind(std::logical_and<bool>(),
-						std::bind(tgen.gen.minOneMoveFilter, _1, _2),
-						std::bind(&FilterMoveByBP, _1, 60, 999));
+					tgen.gen.generalMoveFilter = FilterLegalMovesOnly;
 				}
 			}
-			//shuffle trainer if shuffle requested
-			if (m_settings->shuffleRegulars || m_settings->shuffleBosses) {
-				auto shuffleIfFound = [&](std::vector<ShuffleData::tmp>& vc, unsigned int& benched) -> bool {
-					ShuffleData::tmp s(trainerIt->trainers[j]);
-					int lastRemTrainerN = vc.size() - 1 - benched;
-					for (int i = 0; i < vc.size(); i++) {
-						if (vc[i] == s) {
-							//we are part of this vector, so replace us with a random element
-							//replace with other trainer from this vector
-							int rand = Random::GetInt(0, lastRemTrainerN);
-							trainerIt->trainers[j].trainerId = vc[rand].id;
-							trainerIt->trainers[j].trainerCat = vc[rand].cat;
-							trainerIt->trainers[j].textId = vc[rand].text;
-
-							m_genLog << "shuffling trainer " << (int)trainerIt->trainers[j].trainerId << " (" << (int)trainerIt->trainers[j].textId
-								<< ") and " << vc[rand].id << "( " << (int)vc[rand].text << ")\r\n";
-							std::swap(vc[rand], vc[lastRemTrainerN]);
-							benched++;
-
-							return true;
-						}
-					}
-					return false;
-				};
-				bool suc = false;
-				if (!suc) suc = shuffleIfFound(shuffle[ruleMap[i - 2].r].bosses, shuffle[ruleMap[i - 2].r].bossesNBenched);
-				if (!suc) suc = shuffleIfFound(shuffle[ruleMap[i - 2].r].trainers, shuffle[ruleMap[i - 2].r].trainersNBenched);
-			}
-
-			if (trainerIt->trainers[j].trainerId != (uint32_t)GameInfo::TrainerNames::GRUNT) {
-				if (m_settings->mixCustomsInBosses && isBoss || m_settings->mixCustomsInTrainers && !isBoss) {
-					uint32_t id = trainerIt->trainers[j].trainerId;
-					auto it = std::find_if(shuffledIds.begin(), shuffledIds.end(), [&](const auto& lhs) {return lhs.trainerId == id; });
-					if (it == shuffledIds.end()) {
-						shuffledIds.push_back({ id , {&trainerIt->trainers[j]} });
-					}
-					else it->trainersStructs.push_back(&trainerIt->trainers[j]);
-				}
-			}
-
-			DefTrainer newDef = tgen.Generate(trainerIt->trainers[j]);
-			if (m_settings->min1Buttons == 5) 
-				for(int i = 0; i < newDef.nPokes; i++)
-					{ newDef.pokemon[i].move1 = newDef.pokemon[i].move2 = newDef.pokemon[i].move3 = newDef.pokemon[i].move4 = GameInfo::METRONOME; }
-
-			trainerIt->trainers[j] = newDef;
-
-			//restore trainer specific options
-			if (isBoss) {
-				tgen.stayCloseToBST = m_settings->stayCloseToBST;
-				tgen.gen.minOneMoveFilter = oldOneMoveFilter;
-			}
-			if (m_settings->mixCustomsInBosses) {
-				tgen.changeName = m_settings->trainerRandName;
-			}
-			
-			newDef.Print(m_romText, m_genLog);
-			m_genLog << "\n";
-			//SetProgress(0.08 + (i - 2) * 0.0132 + 0.0132 * (j+1)/(float)nTrainers);
+			else
+				tgen.gen.generalMoveFilter = rules.legalMoveFilter;
+			tgen.gen.speciesFilterBuffer = rules.legalMonList;
+			tgen.gen.speciesFilterBufferN = rules.legalMonListN;
 		}
 
-		SetPartialProgress(0.1 + (i - 1) * (0.9 / 62));
+		bool bIsBoss = trainer.is(TrainerInfo::LAST_OF_CUP) || isBoss(trainer.def);
+
+		if (trainer.cupId == 55) { //rival round 2
+			AddRival2Pokemon(trainer.def);
+		}
+
+		//set trainer specific options
+		if (bIsBoss) {
+			tgen.stayCloseToBST = m_settings->bossStayCloseToBST;
+			using namespace std::placeholders;
+			if (tgen.gen.minOneMoveFilter == nullptr) {
+				tgen.gen.minOneMoveFilter = std::bind(FilterMoveByBP, _1, 60, 999);
+			}
+			else {
+				tgen.gen.minOneMoveFilter = std::bind(std::logical_and<bool>(),
+					std::bind(tgen.gen.minOneMoveFilter, _1, _2),
+					std::bind(&FilterMoveByBP, _1, 60, 999));
+			}
+		}
+
+		DefTrainer newDef = tgen.Generate(trainer.def);
+		if (m_settings->min1Buttons == 5)
+			for (int i = 0; i < newDef.nPokes; i++)
+			{
+				newDef.pokemon[i].move1 = newDef.pokemon[i].move2 = newDef.pokemon[i].move3 = newDef.pokemon[i].move4 = GameInfo::METRONOME;
+			}
+
+		trainer.def = newDef;
+
+		//restore trainer specific options
+		if (bIsBoss) {
+			tgen.stayCloseToBST = m_settings->stayCloseToBST;
+			tgen.gen.minOneMoveFilter = oldOneMoveFilter;
+		}
+		if (m_settings->mixCustomsInBosses) {
+			tgen.changeName = m_settings->trainerRandName;
+		}
+
+		newDef.Print(m_romText, m_genLog);
+		m_genLog << "\n";
+		
+
+		SetPartialProgress(0.1 + (i - 1) * (0.8 / trainerList.size()));
 	}
+
+	
 
 	//
 	// shuffle in custom trainers if reqeusted
 	//
-	int maxN = min(atoi(m_settings->strCustomTrainerN), GlobalConfig::CustomTrainers.customTrainers.size());
-	for (int i = 0; i < shuffledIds.size(); i++) {
-		if (customTrainersUsed.size() < maxN
-			&& (Random::GetInt(0, shuffledIds.size()-1-i + maxN-customTrainersUsed.size()) > shuffledIds.size()-1-i))
-		{
-			//replace with custom trainer
+	int maxCustomTrainers = min(atoi(m_settings->strCustomTrainerN), GlobalConfig::CustomTrainers.customTrainers.size());
+	std::vector<int> possibleCustomTrainers;
+	possibleCustomTrainers.reserve(maxCustomTrainers);
+	if (m_settings->mixCustomsInBosses || m_settings->mixCustomsInTrainers) {
+		//determine which trainers to shuffle in
+		for (int i = 0; i < maxCustomTrainers; i++) {
 			int customN = GlobalConfig::CustomTrainers.customTrainers.size();
-			int usedN = customTrainersUsed.size();
+			int usedN = possibleCustomTrainers.size();
 			//get unused trainer id (adjust random number)
 			int randomIndex = Random::GetInt(0, customN - usedN - 1);
 			for (int i = 0; i < usedN; i++) {
-				if (customTrainersUsed[i] == randomIndex) randomIndex++;
+				if (possibleCustomTrainers[i] == randomIndex) randomIndex++;
 				else break;
 			}
-			customTrainersUsed.push_back(randomIndex);
-			std::sort(customTrainersUsed.begin(), customTrainersUsed.end());
-
-			m_genLog << "shuffling trainer " << (int)shuffledIds[i].trainerId << " with custom trainer " << randomIndex << "\r\n";
-			for (auto trainer : shuffledIds[i].trainersStructs) {
-				auto customTrainer = GlobalConfig::CustomTrainers.GenPermutation(randomIndex, customFaceList);
-				customTrainerTextMods.AddChange(TableInfo::TEXT_TRAINER_NAMES, trainer->trainerId - 1, customTrainer.name);
-				for (int i = 0; i < 40; i++) {
-					if (customTrainer.textLines[i].size() > 0) {
-						customTrainerTextMods.AddChange(TableInfo::TEXT_TRAINER_TEXT_FIRST + trainer->textId,
-							i, customTrainer.textLines[i]);
-					}
-				}
-				m_genLog << "... replaced text id " << (int)trainer->textId
-					<< ") with custom " << customTrainer.name << "\r\n";
-			}
+			possibleCustomTrainers.push_back(randomIndex);
 		}
-	}
+		auto shuffleInCustom = [&, this](std::vector<int>& vec) {
+			int nCustoms = 0;
+			for (int i = 0; i < vec.size(); i++) {
+				TrainerInfo& trainer = trainerList[vec[i]];
+				int nLeft = vec.size() - 1 - i;
+				int nCustomsLeft = possibleCustomTrainers.size() - nCustoms;
+				if (Random::GetInt(0, nLeft + nCustomsLeft) > nLeft) {
+					auto customTrainer = GlobalConfig::CustomTrainers.GenPermutation(possibleCustomTrainers[nCustoms], customFaceList);
+					m_customStrings.AddStringOverride(TableInfo::TEXT_TRAINER_NAMES, 110 + nCustoms - 1, customTrainer.name); //-1 as they are 1 based
+					int oldId = trainer.def.trainerId;
+					trainer.def.trainerId = 110 + nCustoms;
+					for (int i = 0; i < 40; i++) {
+						if (customTrainer.textLines[i].size() > 0) {
+							customTrainerTextMods.AddChange(TableInfo::TEXT_TRAINER_TEXT_FIRST + trainer.def.textId,
+								i, customTrainer.textLines[i]);
+						}
+					}
 
+					m_genLog << "shuffling trainer " << oldId << " with custom trainer " << customTrainer.name << "\r\n";
+					nCustoms++;
+				}
+			}
+		};
+		shuffleInCustom(shuffleInCustoms[0]);
+		shuffleInCustom(shuffleInCustoms[1]);
+	}
 
 	//
 	// build portrait list of used custom trainers
@@ -999,6 +1052,8 @@ void Randomizer::SortInjectedData()
 	bool insertItemData = m_customIInfoTable.size() > 1;
 	bool insertRentalData = m_customRInfoTable.size() > 1;
 	bool insertFaceData = m_customFaceTable.size() > 0;
+	m_customStrings.Finalize();
+	bool insertStringData = m_customStrings.tables.size() > 1;
 
 	uint32_t offsetIts[_countof(emptySpaces)];
 	for (int i = 0; i < _countof(emptySpaces); i++) offsetIts[i] = emptySpaces[i].offStart;
@@ -1062,6 +1117,28 @@ void Randomizer::SortInjectedData()
 		InjectedFace2::SetRedirectTarget(m_customFaceRedirectCode, faceCodeAddr + 0xB0000000);
 	}
 
+	if (insertStringData) {
+		unsigned int size;
+
+		//our custom code
+		m_customStringsHelperInjectCode = InjectedStringsHelper::CreateInjection(&size);
+		uint32_t helperAddr = AddData(m_customStringsHelperInjectCode, size);
+		m_customStringsInitInjectCode = InjectedStringsInit::CreateInjection(&size);
+		InjectedStringsInit::SetJalHelperAddress(m_customStringsInitInjectCode, helperAddr);
+		uint32_t initAddr = AddData(m_customStringsInitInjectCode, size);
+		m_customStringsGetInjectCode = InjectedStringsGet::CreateInjection(&size);
+		InjectedStringsGet::SetJalHelperAddress(m_customStringsGetInjectCode, helperAddr);
+		uint32_t getAddr = AddData(m_customStringsGetInjectCode, size);
+
+		//the redirect in their code
+		m_customStringsInitRedirectCode = InjectedStringsInit::CreateRedirect(&size);
+		m_romReplacements.emplace_back(RomReplacements{ m_customStringsInitRedirectCode, size, StringInitRedirectAdr() });
+		InjectedStringsInit::SetRedirectTarget(m_customStringsInitRedirectCode, initAddr + 0xB0000000);
+		m_customStringsGetRedirectCode = InjectedStringsGet::CreateRedirect(&size);
+		m_romReplacements.emplace_back(RomReplacements{ m_customStringsGetRedirectCode, size, StringGetRedirectAdr() });
+		InjectedStringsGet::SetRedirectTarget(m_customStringsGetRedirectCode, getAddr + 0xB0000000);
+	}
+
 	SetPartialProgress(0.3);
 
 	uint32_t codeOffset = offsetIts[0];
@@ -1085,6 +1162,12 @@ void Randomizer::SortInjectedData()
 		m_genFaceTableOffset = AddDataVec(m_customFInfoTable);
 		m_genLog << "placed custom face table header at " << m_genFaceTableOffset << "\n";
 		InjectedFace2::SetInjectionTableAddress(m_customFaceInjectCode, m_genFaceTableOffset + 0xB0000000);
+		m_needsNewCrc = true;
+	}
+	if (insertStringData) {
+		m_genStringTableOffset = AddDataVec(m_customStrings.tables);
+		m_genLog << "placed custom face table header at " << m_genStringTableOffset << "\n";
+		InjectedStringsHelper::SetInjectionTableAddress(m_customStringsHelperInjectCode, m_genStringTableOffset + 0xB0000000);
 		m_needsNewCrc = true;
 	}
 	SetPartialProgress(0.4);
@@ -1133,6 +1216,14 @@ void Randomizer::SortInjectedData()
 			m_genLog << "placed custom face nr. " << i << " at " << romOffset << " - " << romOffset + m_customFaceTable[i].size() << "\n";
 		}
 	}
+	if (insertStringData) {
+		for (int i = 0; i < m_customStrings.finalizedSinfoTables.size(); i++) {
+			uint32_t romOffset = AddDataVec(m_customStrings.finalizedSinfoTables[i]);
+			//adjust length and offset bad on original table position
+			m_customStrings.tables[i].tableOffset = romOffset - m_genStringTableOffset;
+			m_genLog << "placed custom string table nr. " << i << " at " << romOffset << " - " << romOffset + m_customStrings.finalizedSinfoTables[i].size() << "\n";
+		}
+	}
 	m_genLog << "done placing custom data; used\n";
 	for (int i = 0; i < _countof(emptySpaces); i++) {
 		m_genLog << "\t" << offsetIts[i] - emptySpaces[i].offStart << " / " << emptySpaces[i].size << " in space " << i << "\n";
@@ -1148,6 +1239,7 @@ void Randomizer::SortInjectedData()
 		for (DefPokemon* it = (DefPokemon*)(table.data() + 4); it < (DefPokemon*)(table.data() + table.size()); it++) it->Curate(false);
 	for (auto& table : m_customFaceTable)
 		((DefFaces::Faces*)table.data())->Curate(false);
+	m_customStrings.Curate(false);
 	SetPartialProgress(0.85);
 
 	//all gathered, now do swaps

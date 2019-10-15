@@ -143,11 +143,13 @@
     <ClCompile Include="GlobalRandom.cpp" />
     <ClCompile Include="ItemTable.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="MoveGenerator.cpp" />
     <ClCompile Include="MoveTable.cpp" />
     <ClCompile Include="PokemonGenerator.cpp" />
     <ClCompile Include="PokemonNicknames.cpp" />
     <ClCompile Include="PokemonTable.cpp" />
     <ClCompile Include="Randomizer.cpp" />
+    <ClCompile Include="SpeciesGenerator.cpp" />
     <ClCompile Include="StadiumStrings.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -176,6 +178,7 @@
     <ClInclude Include="GlobalConfigs.h" />
     <ClInclude Include="GlobalRandom.h" />
     <ClInclude Include="ItemTable.h" />
+    <ClInclude Include="MoveGenerator.h" />
     <ClInclude Include="MoveTable.h" />
     <ClInclude Include="PokemonNicknames.h" />
     <ClInclude Include="PokemonTable.h" />
@@ -183,6 +186,7 @@
     <ClInclude Include="Randomizer.h" />
     <ClInclude Include="CustomCode.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="SpeciesGenerator.h" />
     <ClInclude Include="StadiumStrings.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="Tables.h" />

@@ -8,8 +8,8 @@ B0000000: Start address of mapped ROM
 
 always valid:
 8007D278: general PI DMA transfer
-80003FD8 calls 80006ACC: takes ram, rom, length, calls above with it
-800042A0 calls 80003F74: takes ram, rom, romEnd, calls above with it
+80003FD8 calls 80006ACC: takes ram, rom, length, calls above with it (a0 = ? (0), a1 = ram, a2 = rom, a3 = len)
+800042A0 calls 80003F74: takes ram, rom, romEnd, calls above with it (a0 = ram, a1 = rom start, a2 = rom end, a3 = 0?)
 8000442C calls 80004254: doesnt take ram i think, but does take rom, romEnd. use above for gen things
 
 8024A5DD: data, totodile rental struct during pokecup rental selection
@@ -18,6 +18,18 @@ always valid:
 801883D0: loads cup rentals et al based on rental table index (a1) from rule+rental+thensome struct		FA740 in rom (FA890 in E)
 80157350: same function when in GC or Rival fight
 800049E0: reads table offset and length, but for many more things than just the rental table			
+
+8015B1D8 calling 8004C874: takes a0=text table nr, a1=entry nr, returns pointer to string in v0			called is 4D474 in rom
+	-> 8004C888 calling 8004C7A0
+801591A4 calling 8004C4B0: load string table by number into RAM
+800049F4 reads length for sub(?)table
+8004C4DC calling 8004C3EC: a0 = x (see below), a1 = $nr; returns buffer to text table nr $nr			calling is 4D0DC in rom
+	note: const somestruct* = 80097120, x = [somestruct + 8], 
+	x + (nr << 4) + 0x10 = address of header for string table with index "nr", like {u32 offset, u32 size, void* rambuffer, u32 ???}
+
+
+
+
 
 80157598 calling 8004E0F0: same as above (during GC or Rival), but for faces table only?				142758 in rom
 80186C28 calling 8004E0F0: during games, but seems to behave differntly inject wise?

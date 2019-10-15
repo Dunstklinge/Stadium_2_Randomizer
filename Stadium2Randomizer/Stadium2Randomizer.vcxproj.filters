@@ -108,6 +108,12 @@
     <ClCompile Include="CustomTrainerDefs.cpp">
       <Filter>Configs</Filter>
     </ClCompile>
+    <ClCompile Include="SpeciesGenerator.cpp">
+      <Filter>Generators</Filter>
+    </ClCompile>
+    <ClCompile Include="MoveGenerator.cpp">
+      <Filter>Generators</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DefPokemon.h">
@@ -196,6 +202,12 @@
     </ClInclude>
     <ClInclude Include="CustomTrainerDefs.h">
       <Filter>Configs</Filter>
+    </ClInclude>
+    <ClInclude Include="SpeciesGenerator.h">
+      <Filter>Generators</Filter>
+    </ClInclude>
+    <ClInclude Include="MoveGenerator.h">
+      <Filter>Generators</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -67,12 +67,32 @@ private:
 	std::vector<CustomFaceInfo>					m_customFInfoTable;
 	std::vector<std::vector<uint8_t>>			m_customFaceTable;		//list of custom faces to be inserted. uint8_t -> actually DefFace
 	std::vector<CustomTrainerDefs::Trainer>		m_customTrainers;
-	uint8_t* m_customItemRedirectCode;
-	uint8_t* m_customItemInjectCode;
-	uint8_t* m_customRentalRedirectCode;
-	uint8_t* m_customRentalInjectCode;
-	uint8_t* m_customFaceRedirectCode;
-	uint8_t* m_customFaceInjectCode;
+	struct CustomStringData {
+		std::vector<CustomStringTableInfo> tables;
+		std::vector<CustomStringInfo> sinfos;
+		std::vector<std::vector<std::string>> strings;
+
+		std::vector<std::vector<uint8_t>> finalizedSinfoTables;
+
+		int AddStringOverride(uint8_t tableId, uint8_t strIdStart, const std::string& str);
+		void Finalize();
+		void Curate(bool forth);
+	}											m_customStrings;
+
+	
+
+	uint8_t* m_customItemRedirectCode = nullptr;
+	uint8_t* m_customItemInjectCode = nullptr;
+	uint8_t* m_customRentalRedirectCode = nullptr;
+	uint8_t* m_customRentalInjectCode = nullptr;
+	uint8_t* m_customFaceRedirectCode = nullptr;
+	uint8_t* m_customFaceInjectCode = nullptr;
+	uint8_t* m_customStringsHelperInjectCode = nullptr;
+	uint8_t* m_customStringsInitRedirectCode = nullptr;
+	uint8_t* m_customStringsInitInjectCode = nullptr;
+	uint8_t* m_customStringsGetRedirectCode = nullptr;
+	uint8_t* m_customStringsGetInjectCode = nullptr;
+
 
 	CupRules m_cupRules;
 	char m_romRegion;	//E = US, P = EU, rest unsupported
@@ -80,7 +100,7 @@ private:
 	uint32_t m_genItemTableOffset;
 	uint32_t m_genRosterTableOffset;
 	uint32_t m_genFaceTableOffset;
-
+	uint32_t m_genStringTableOffset;
 
 	bool AnalyseRom();
 	CupRules GenerateCupRules();
@@ -119,6 +139,14 @@ private:
 	static constexpr uint32_t naFace2RedirectAdr = 0x4ECF0;
 	static constexpr uint32_t euFace2RedirectAdr = 0x4EDD0;
 	inline uint32_t Face2RedirectAdr() { return m_romRegion == 'E' ? naFace2RedirectAdr : euFace2RedirectAdr; }
+
+	static constexpr uint32_t naStringInitRedirectAdr = 0x4D0DC;
+	static constexpr uint32_t euStringInitRedirectAdr = 0x4EDD0; //TODO
+	inline uint32_t StringInitRedirectAdr() { return m_romRegion == 'E' ? naStringInitRedirectAdr : euStringInitRedirectAdr; }
+
+	static constexpr uint32_t naStringGetRedirectAdr = 0x4D474;
+	static constexpr uint32_t euStringGetRedirectAdr = 0x4EDD0; //TODO
+	inline uint32_t StringGetRedirectAdr() { return m_romRegion == 'E' ? naStringGetRedirectAdr : euStringGetRedirectAdr; }
 
 	/*static constexpr uint32_t emptySpace1Start = 0x2589400;
 	static constexpr uint32_t emptySpace1End = 0x258d000;

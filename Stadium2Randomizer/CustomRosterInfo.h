@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <memory>
 
 #include "Util.h"
 
@@ -48,3 +49,44 @@ public:
 		SwitchEndianness(faceLength);
 	}
 };
+
+
+//table of CustomStringInfo tables
+class CustomStringTableInfo 
+{
+public:
+	uint16_t tableId;
+	uint16_t tableOffset;
+	uint32_t tableSize;
+
+	inline void Curate(bool forth) {
+		SwitchEndianness(tableId);
+		SwitchEndianness(tableOffset);
+		SwitchEndianness(tableSize);
+	}
+};
+
+static_assert(sizeof(CustomStringTableInfo) == 8, "size mismatch");
+
+class CustomStringInfo
+{
+public:
+	uint8_t start;
+	uint8_t end;
+	uint16_t padding;
+
+	//uint32_t offsets[end-start]
+	//string strings[end-start] 
+
+	//warning: only call on finalized version
+	inline void Curate(bool forth) {
+		uint32_t* arr = (uint32_t*)(((uint8_t*)this) + 4);
+		for (int i = start; i < end; i++) {
+			SwitchEndianness(arr[i - start]);
+		}
+	}
+};
+
+
+static_assert(sizeof(CustomStringInfo) == 4, "size mismatch");
+
