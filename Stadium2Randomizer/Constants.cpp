@@ -836,5 +836,38 @@ namespace GameInfo {
 		"RIVAL16",
 		"RIVAL17"
 	};
-
 }
+
+namespace GameInfo {
+	const char* TypeNames[28] = {
+	   "Normal",
+	   "Fighting",
+	   "Flying",
+	   "Poison",
+	   "Ground",
+	   "Rock",
+	   "Missingno.",
+	   "Bug",
+	   "Ghost",
+	   "Steel",
+	   "Missingno.",
+	   "Missingno.",
+	   "Missingno.",
+	   "Missingno.",
+	   "Missingno.",
+	   "Missingno.",
+	   "Missingno.",
+	   "Missingno.",
+	   "Missingno.",
+	   "???",
+	   "Fire",
+	   "Water",
+	   "Grass",
+	   "Electric",
+	   "Psychic",
+	   "Ice",
+	   "Dragon",
+	   "Dark",
+	};
+}
+

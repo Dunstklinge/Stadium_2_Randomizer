@@ -3,6 +3,7 @@
 // Used by Stadium2Randomizer.rc
 //
 #define IDD_DIALOG1                     101
+#define IDD_DISTRDISTDIALOG             103
 #define IDC_EDPATH                      1001
 #define IDC_BTNGENERATE                 1002
 #define IDC_STSTATUS                    1003
@@ -44,6 +45,7 @@
 #define IDC_RDSPECIAL                   1046
 #define IDC_RDYOLONOME                  1046
 #define IDC_COMBO1                      1047
+#define IDC_CBBTYPE                     1047
 #define IDC_CBLEGALMOVESONLY            1049
 #define IDC_CBSHUFFLEBOSS               1056
 #define IDC_CBSHUFFLEREGULAR            1057
@@ -62,34 +64,73 @@
 #define IDC_CB_TRAINER_RANDPOKE         1073
 #define IDC_CB_TRAINER_RANDOM           1074
 #define IDC_CBUBERTYPES                 1075
-#define IDC_EDIT1                       1076
-#define IDC_EDIT2                       1077
-#define IDC_CHECK2                      1078
-#define IDC_RADIO1                      1079
-#define IDC_RADIO2                      1080
-#define IDC_RADIO3                      1081
-#define IDC_CHECK3                      1082
-#define IDC_CHECK4                      1083
-#define IDC_CHECK5                      1084
-#define IDC_CHECK6                      1085
-#define IDC_CHECK7                      1086
-#define IDC_CHECK9                      1088
-#define IDC_CHECK10                     1089
-#define IDC_CHECK11                     1090
-#define IDC_CHECK12                     1091
-#define IDC_CHECK13                     1092
-#define IDC_CHECK14                     1093
-#define IDC_CHECK15                     1094
-#define IDC_CHECK16                     1095
-#define IDC_CHECK17                     1096
+#define IDC_EDRPTADDPERCENT             1076
+#define IDC_EDRPTREMPERCENT             1077
+#define IDC_CBUBERBST                   1078
+#define IDC_RDRPBSTKEEPBST              1079
+#define IDC_RDRPBSTCLOSEBST             1080
+#define IDC_RDRPBSTRANDBST              1081
+#define IDC_CBRPBSTEVOBST               1083
+#define IDC_CBRPBSTEVOSTATS             1084
+#define IDC_CBRMBP                      1085
+#define IDC_CBRMPP                      1086
+#define IDC_EDRMSECADDPERCENT           1087
+#define IDC_CBRMCLOSEBP                 1088
+#define IDC_CBRMACC                     1090
+#define IDC_CBUBERMOVES                 1091
+#define IDC_CBRMBALANCE                 1092
+#define IDC_CBRMSEC                     1093
+#define IDC_CBRMEFFECTCHANCE            1094
+#define IDC_CBRMTYPE                    1095
+#define IDC_CBRMRANDSTATUS              1096
+#define IDC_CANVAS                      1097
+#define IDC_EDRMSECREMPERCENT           1097
+#define IDC_CBRANDLEVEL_BTNDIST         1099
+#define IDC_CBRANDOMEVIV_BTNDIST        1100
+#define IDC_CB_TRAINER_RANDEVIV_BTNDIST 1101
+#define IDC_BTNRPBSTDIST                1102
+#define IDC_BTNRMBPDIST                 1103
+#define IDC_BTNRMPPDIST                 1104
+#define IDC_BTNRMACCDIST                1105
+#define IDC_STATIC_1                    1106
+#define IDC_STATIC_2                    1107
+#define IDC_STATIC_3                    1108
+#define IDC_STATIC_4                    1109
+#define IDC_STATIC_5                    1110
+#define IDC_EDMIN                       1111
+#define IDC_EDMAX                       1112
+#define IDC_ED_1                        1113
+#define IDC_BTNRMECDIST                 1113
+#define IDC_ED_2                        1114
+#define IDC_SPIN1                       1114
+#define IDC_ED_3                        1115
+#define IDC_SPIN2                       1115
+#define IDC_ED_4                        1116
+#define IDC_SPIN3                       1116
+#define IDC_ED_5                        1117
+#define IDC_SPIN4                       1117
+#define IDC_SLIDERMIN                   1118
+#define IDC_SLIDERMAX                   1119
+#define IDC_SLIDER_1                    1120
+#define IDC_SLIDER_2                    1121
+#define IDC_SLIDER_3                    1122
+#define IDC_SLIDER_4                    1123
+#define IDC_SLIDER_5                    1124
+#define IDC_SPINMIN                     1125
+#define IDC_SPINMAX                     1126
+#define IDC_SPIN_1                      1127
+#define IDC_SPIN_2                      1128
+#define IDC_SPIN_3                      1129
+#define IDC_SPIN_4                      1130
+#define IDC_SPIN_5                      1131
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        103
+#define _APS_NEXT_RESOURCE_VALUE        105
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1097
+#define _APS_NEXT_CONTROL_VALUE         1118
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

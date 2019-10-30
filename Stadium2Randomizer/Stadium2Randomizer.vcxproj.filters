@@ -114,6 +114,15 @@
     <ClCompile Include="MoveGenerator.cpp">
       <Filter>Generators</Filter>
     </ClCompile>
+    <ClCompile Include="DiscreteDistribution.cpp">
+      <Filter>Generators</Filter>
+    </ClCompile>
+    <ClCompile Include="CDistDialog.cpp">
+      <Filter>GUI</Filter>
+    </ClCompile>
+    <ClCompile Include="MoveEffectValue.cpp">
+      <Filter>Configs</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DefPokemon.h">
@@ -208,6 +217,15 @@
     </ClInclude>
     <ClInclude Include="MoveGenerator.h">
       <Filter>Generators</Filter>
+    </ClInclude>
+    <ClInclude Include="DiscreteDistribution.h">
+      <Filter>Generators</Filter>
+    </ClInclude>
+    <ClInclude Include="CDistDialog.h">
+      <Filter>GUI</Filter>
+    </ClInclude>
+    <ClInclude Include="MoveEffectValue.h">
+      <Filter>Configs</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -9,6 +9,7 @@
 #include "PokemonGenerator.h"
 #include "TrainerGenerator.h"
 #include "GlobalConfigs.h"
+#include "MoveTable.h"
 
 int main(int argc, char* argv[]) {
 	GameInfo::InitTables();
@@ -312,4 +313,21 @@ void Test_ExtractTrainers(CString rom) {
 	}
 
 	delete[](uint8_t*)r;
+}
+
+
+void Test_ExtractMoveEffects(CString rom) {
+	DefText* text = DefText::FromFile(rom);
+	text->Curate(true);
+	std::ofstream out("genMoveEffectList.txt");
+
+	auto& textIt = text->begin()[TableInfo::MOVE_NAMES];
+	for (int i = 0; i < 250; i++){
+		auto& move = GameInfo::Moves[i];
+		out << textIt[i] << ":\t" << std::string(5 - (strlen(textIt[i])+1) / 4, '\t') 
+			<< (int)move.basePower << "bp\t" << (move.basePower <= 9 ? "\t" : "") << (int)move.pp << "/" << (int)move.pp << "pp\t" 
+			<< (int)move.type << "t\t"
+			<< (int)move.effectId << "\t(" << (int)move.effectChance << ")\n";
+	}
+	delete[](uint8_t*)text;
 }

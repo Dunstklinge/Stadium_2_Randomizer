@@ -15,6 +15,8 @@ namespace TableInfo {
 
 	//from the text table
 	enum TextNumber {
+		POKEMON_NAMES = 0x00,
+		MOVE_NAMES = 0x06,
 		TEXT_TRAINER_NAMES = 0x2A,
 		
 		TEXT_TRAINER_TEXT_FIRST = 0x4C
@@ -1210,17 +1212,21 @@ namespace GameInfo {
 
 
 namespace GameInfo {
-	enum TYPE : uint8_t {
+	enum Type : uint8_t {
 		NORMAL = 0x00,
 		FIGHTING = 0x01,
 		FLYING = 0x02,
 		POISON = 0x03,
 		GROUND = 0x04,
 		ROCK = 0x05,
+		//wtf
 		BUG = 0x07,
 		GHOST = 0x08,
 		STEEL = 0x09,
-
+		//not sure why this gap exists.
+		//if its just about physical vs special, i'd expect fire to be 0x10.
+		//in the type name table, there is no gap here
+		QUESTIONMARK_TYPE = 0x13,
 		FIRE = 0x14,
 		WATER = 0x15,
 		GRASS = 0x16,
@@ -1232,3 +1238,171 @@ namespace GameInfo {
 	};
 }
 
+namespace GameInfo {
+	extern const char* TypeNames[28];
+}
+
+
+namespace GameInfo {
+	//these have a few holes that are not present in existing moves. might have to be tested
+	enum MoveEffect : uint8_t {
+		NO_EFFECT = 0,
+		SLEEP_STATUS = 1,
+		POISON_CHANCE = 2,
+		DRAIN_HEALTH = 3,
+		BURN_CHANCE = 4,
+		FREEZE_CHANCE = 5,
+		PARALYSIS_CHANCE = 6,
+		KABOOM = 7,
+		DREAM_EATER_EFFECT = 8,
+		MIRROR_MOVE_EFFECT = 9,
+		ATTACK_PLUS_ONE = 10,
+		DEFENSE_PLUS_ONE = 11,
+		SPEED_PLUS_ONE = 12,	//guessed
+		SPA_PLUS_ONE = 13,
+		SPD_PLUS_ONE = 14,		//guessed
+		ACCURACY_PLUS_ONE = 15, //guessed
+		EVASION_PLUS_ONE = 16,
+		ALWAYS_HITS = 17,
+		ATTACK_MINUS_ONE = 18,
+		DEFENSE_MINUS_ONE = 19,
+		SPEED_MINUS_ONE = 20,
+		SPA_MINUS_ONE = 21,		//guessed
+		SPD_MINUS_ONE = 22,		//guessed
+		ACCURACY_MINUS_ONE = 23,
+		EVASION_MINUS_ONE = 24,
+		HAZE_EFFECT = 25,
+		BIDE_EFFECT = 26,
+		THRASHING_ABOUT = 27,
+		PHASING = 28,
+		MULTI_STRIKE = 29,
+		CONVERSION_EFFECT = 30,
+		FLINCH_CHANCE = 31,
+		RECOVER_HEALTH = 32, //rest also has this, so rest seems to be hardcoded
+		BAD_POISON_STATUS = 33,
+		PAY_DAY_MONEY = 34,
+		LIGHT_SCREEN_EFFECT = 35, 
+		TRI_ATTACK_EFFECT = 36,
+
+		ONE_HIT_KO = 38,
+		RAZOR_WIND_EFFECT = 39,
+		SUPER_FANG_EFFECT = 40,
+		DAMAGE_IGNORES_STATS = 41, //dragon rage and sonic boom
+		BINDING = 42,
+
+		HITS_TWICE = 44,
+		RECOIL_WHEN_MISSING = 45,
+		MIST_EFFECT = 46,
+		FOCUS_ENERGY_EFFECT = 47,
+		RECOIL = 48,
+		CONFUSE = 49,
+		ATTACK_PLUS_TWO = 50,
+		DEFENSE_PLUS_TWO = 51,
+		SPEED_PLUS_TWO = 52,
+		SPA_PLUS_TWO = 53, //guessed
+		SPD_PLUS_TWO = 54,
+		ACCURACY_PLUS_TWO = 55, //guessed
+		EVASION_PLUS_TWO = 56, //guessed
+		TRANSFORM_EFFECT = 57,
+		ATTACK_MINUS_TWO = 58,
+		DEFENSE_MINUS_TWO = 59,
+		SPEED_MINUS_TWO = 60,
+		SPA_MINUS_TWO = 61,		 //guessed
+		SPD_MINUS_TWO = 62,		 //guessed
+		ACCURACY_MINUS_TWO = 63, //guessed
+		EVASION_MINUS_TWO = 64,	 //guessed
+		REFLECT_EFFECT = 65,
+		POISON_STATUS = 66,
+		PARALYSIS_STATUS = 67,
+		ATTACK_MINUS_ONE_CHANCE = 68,
+		DEFENSE_MINUS_ONE_CHANCE = 69,
+		SPEED_MINUS_ONE_CHANCE = 70,
+		SPA_MINUS_ONE_CHANCE = 71, //guessed
+		SPD_MINUS_ONE_CHANCE = 72,
+		ACCURACY_MINUS_ONE_CHANCE = 73,
+		EVASION_MINUS_ONE_CHANCE = 74, //guessed
+		SKY_ATTACK_EFFECT = 75, //i dont know why this is unique to sky attack
+		CONFUSE_CHANCE = 76,
+		HITS_TWICE_POISON_CHANCE = 77,
+
+		SUBSTITUTE_EFFECT = 79,
+		RECHARGE_AFTER_USE = 80,
+		RAGE_EFFECT = 81,
+		MIMIC_EFFECT = 82,
+		METRONOME_EFFECT = 83,
+		LEECH_SEED_EFFECT = 84,
+		SPLASH_EFFECT = 85,
+		DISABLE_EFFECT = 86,
+		DAMAGE_BY_LEVEL_EFFECT = 87,	//seismic toss, night shade
+		PSYWAVE_EFFECT = 88,
+		COUNTER_EFFECT = 89,
+		ENCORE_EFFECT = 90,
+		PAIN_SPLIT_EFFECT = 91,
+		SNORE_EFFECT = 92, //has a chance parameter, and i dont know what it does; its 76
+		CONVERSION_TWO_EFFECT = 93,
+		NEXT_MOVE_HITS = 94,
+		SKETCH_EFFECT = 95,
+
+		SLEEP_TALK_EFFECT = 97,
+		DESTINY_BOND_EFFECT = 98,
+		BP_BASED_ON_HEALTH = 99,
+		SPITE_EFFECT = 100,
+		FALSE_SWIPE_EFFECT = 101,
+		HEAL_BELL_EFFECT = 102,
+		HIGH_PRIORITY = 103,
+		TRIPLE_KICK_EFFECT = 104,
+		ITEM_STEAL_CHANCE = 105,
+		CANT_ESCAPE = 106,
+		NIGHTMARE_EFFECT = 107,
+		FLAME_WHEEL_EFFECT = 108,	//burn chance + auto thaw
+		CURSE_EFFECT = 109,
+
+		PROTECT_EFFECT = 111,
+		SPIKES_EFFECT = 112,
+		FORESIGHT_EFFECT = 113,
+		PERISH_SONG_EFFECT = 114,
+		SANDSTORM_EFFECT = 115,
+		ENDURE_EFFECT = 116,
+		ROLLOUT_EFFECT = 117,
+		SWAGGER_EFFECT = 118,
+		FURY_CUTTER_EFFECT = 119,
+		ATTRACT_EFFECT = 120,
+		RETURN_EFFECT = 121,
+		PRESENT_EFFECT = 122,
+		FRUSTRATION_EFFECT = 123,
+		SAFEGUARD_EFFECT = 124,
+		SACRED_FIRE_EFFECT = 125, //not sure why this is not shared with flame wheel
+		MAGNITUDE_EFFECT = 126,
+		BATON_PASS_EFFECT = 127,
+		PURSUIT_EFFECT = 128,
+		RAPID_SPIN_EFFECT = 129,
+
+
+		MORNING_SUN_EFFECT = 132,
+		SYNTHESIS_EFFECT = 133,
+		MOONLIGHT_EFFECT = 134,
+		HIDDEN_POWER_EFFECT = 135,	//includes bp chance
+		RAIN_DANCE_EFFECT = 136,
+		SUNNY_DAY_EFFECT = 137,
+		ATTACK_PLUS_ONE_CHANCE = 138,
+		DEFENSE_PLUS_ONE_CHANCE = 139,
+		RAINBOW_CHANCE = 140,	//KappaPride
+
+		BELLY_DRUM_EFFECT = 142,
+		PSYCH_UP_EFFECT = 143,
+		MIRROR_COAT_EFFECT = 144,
+		SKULL_BASH_EFFECT = 145,
+		TWISTER_EFFECT = 146,	//can hit fly + flinch chance
+		HITS_DIGGING = 147,
+		FUTURE_SIGHT_EFFECT = 148,
+		HITS_FLYING = 149,
+		HITS_MINIMIZED = 150,
+		SOLAR_BEAM_EFFECT = 151,
+		THUNDER_EFFECT = 152, //i guess paralysis + rain accuracy
+		TELEPORT_EFFECT = 153,
+		BEAT_UP_EFFECT = 154,
+		SEMI_INVUL = 155,
+		DEFENSE_CURL_EFFECT = 156,
+
+	};
+}

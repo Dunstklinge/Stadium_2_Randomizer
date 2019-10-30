@@ -20,7 +20,7 @@ PokemonGenerator::PokemonGenerator()
 
 	minLevel = 100;
 	maxLevel = 100;
-	levelUniformDistribution = true;
+	levelDist = DiscreteDistribution(0, 100);
 
 	itemFilter = nullptr;
 	itemFilterBuffer = nullptr;
@@ -35,7 +35,7 @@ PokemonGenerator::PokemonGenerator()
 	randEvs = true;
 	randIvs = true;
 	bstEvIvs = true;
-	statsUniformDistribution = false;
+	statsDist = DiscreteDistribution(0, 100);
 }
 
 
@@ -135,15 +135,8 @@ void PokemonGenerator::GenLevel(DefPokemon& mon)
 		mon.level = minLevel;
 		return;
 	}
-	if (levelUniformDistribution) {
-		std::uniform_int_distribution<int> dist(minLevel, maxLevel);
-		mon.level = dist(Random::Generator);
-	}
-	else {
-		std::binomial_distribution dist(maxLevel - minLevel, 0.5);
-		mon.level = dist(Random::Generator) + minLevel;
-	}
-
+	levelDist.SetMinMax(minLevel, maxLevel);
+	mon.level = levelDist(Random::Generator);
 }
 
 void PokemonGenerator::GenEvsIvs(DefPokemon & mon)
@@ -157,7 +150,7 @@ void PokemonGenerator::GenEvsIvs(DefPokemon & mon)
 		constexpr double maxEvRange = 0.6; //in percent from ffff range
 		constexpr double maxIvRange = 0.5;
 
-		SatUAr bst = GameInfo::Pokemons[mon.species].CalcBST();
+		SatUAr bst = GameInfo::Pokemons[mon.species - 1].CalcBST();
 		SatUAr shiftedBst = std::clamp(bst.t, 200u, 680u) - 200; //from 0 to 480
 		//200 bst should always be FFFF, 680bst should always be 0.
 		if constexpr (false) {
@@ -201,40 +194,21 @@ void PokemonGenerator::GenEvsIvs(DefPokemon & mon)
 
 	}
 
-	if (statsUniformDistribution || minEv == maxEv) {
-		std::uniform_int_distribution<int> dist(minEv, maxEv);
-		mon.evHp = dist(Random::Generator);
-		mon.evAtk = dist(Random::Generator);
-		mon.evDef = dist(Random::Generator);
-		mon.evSpd = dist(Random::Generator);
-		mon.evSpc = dist(Random::Generator);
+	statsDist.SetMinMax(minEv, maxEv);
+	mon.evHp = statsDist(Random::Generator);
+	mon.evAtk = statsDist(Random::Generator);
+	mon.evDef = statsDist(Random::Generator);
+	mon.evSpd = statsDist(Random::Generator);
+	mon.evSpc = statsDist(Random::Generator);
 
-	}
-	else {
-		double nStandardDists = 0xFFFF / 2.0 / 9000;
-		discrete_normal_distribution gdist(minEv, maxEv, nStandardDists);
-
-		mon.evHp = gdist(Random::Generator);
-		mon.evAtk = gdist(Random::Generator);
-		mon.evDef = gdist(Random::Generator);
-		mon.evSpd = gdist(Random::Generator);
-		mon.evSpc = gdist(Random::Generator);
-
-	}
 		
-	if (statsUniformDistribution || minIv == maxIv) {
-		std::uniform_int_distribution<int> dist(minIv, maxIv);
-		int dvs[4];
-		for (int i = 0; i < 4; i++) dvs[i] = dist(Random::Generator);
-		mon.dvs = dvs[0] | (dvs[1] << 4) | (dvs[2] << 8) | (dvs[3] << 12);
-	}
-	else {
-		double nStandardDists = 2;
-		discrete_normal_distribution dvdist(minIv, maxIv, nStandardDists);
-		int dvs[4];
-		for (int i = 0; i < 4; i++) dvs[i] = dvdist(Random::Generator);
-		mon.dvs = dvs[0] | (dvs[1] << 4) | (dvs[2] << 8) | (dvs[3] << 12);
-	}
+	
+	//double nStandardDists = 2;
+	statsDist.SetMinMax(minIv, maxIv);
+	int dvs[4];
+	for (int i = 0; i < 4; i++) dvs[i] = statsDist(Random::Generator);
+	mon.dvs = dvs[0] | (dvs[1] << 4) | (dvs[2] << 8) | (dvs[3] << 12);
+	
 	
 	
 }
@@ -334,8 +308,8 @@ void PokemonGenerator::GenItem(DefPokemon & mon)
 		GameInfo::ItemId items[3];
 	} extraItems;
 	extraItems.speciesItem = GameInfo::SpeciesBattleItemMap[mon.species];
-	extraItems.typeItem1 = GameInfo::TypeBattleItemMap[GameInfo::Pokemons[mon.species].type1];
-	extraItems.typeItem2 = GameInfo::TypeBattleItemMap[GameInfo::Pokemons[mon.species].type2];
+	extraItems.typeItem1 = GameInfo::TypeBattleItemMap[GameInfo::Pokemons[mon.species - 1].type1];
+	extraItems.typeItem2 = GameInfo::TypeBattleItemMap[GameInfo::Pokemons[mon.species - 1].type2];
 	
 	int includeItemsIgnore = 0; //bitfield, bit 1 ,2 ,3 for species, type1, type2
 	if (extraItems.speciesItem == GameInfo::NO_ITEM) includeItemsIgnore |= 1;

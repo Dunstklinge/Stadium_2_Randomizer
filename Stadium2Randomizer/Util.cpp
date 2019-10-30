@@ -77,7 +77,7 @@ void PrintAllNicknames(DefRoster* roster, DefText* text)
 	std::ofstream out("nicknames.txt");
 
 	for (auto& p : monMap) {
-		const GameInfo::Pokemon& species = GameInfo::Pokemons[p.first];
+		const GameInfo::Pokemon& species = GameInfo::Pokemons[p.first - 1];
 		out << p.first << "::" << GameInfo::PokemonNames[p.first] << "\n";
 		for (auto str : p.second) {
 			out << str << "\n";
@@ -109,7 +109,7 @@ void PrintAllTrainerNames(DefRoster* roster, DefText* text)
 	std::ofstream out("trainerNames.txt");
 
 	for (auto& p : monMap) {
-		const GameInfo::Pokemon& species = GameInfo::Pokemons[p.first];
+		const GameInfo::Pokemon& species = GameInfo::Pokemons[p.first - 1];
 		out << p.first << "::" << GameInfo::TrainerCatNames[p.first] << "\n";
 		for (auto str : p.second) {
 			out << str << "\n";

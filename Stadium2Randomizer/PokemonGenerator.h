@@ -6,6 +6,7 @@
 #include "DefPokemon.h"
 #include "Tables.h"
 #include "Constants.h"
+#include "DiscreteDistribution.h"
 
 class PokemonGenerator
 {
@@ -35,7 +36,8 @@ public:
 
 	int minLevel;
 	int maxLevel;
-	bool levelUniformDistribution; //use binomial distribution if false
+	DiscreteDistribution levelDist;
+	//bool levelUniformDistribution; //use binomial distribution if false
 
 	//bool (*itemFilter)(GameInfo::ItemId) = nullptr;
 	std::function<bool(GameInfo::ItemId, GameInfo::PokemonId)> itemFilter = nullptr;
@@ -55,7 +57,8 @@ public:
 	bool randEvs;
 	bool randIvs;
 	bool bstEvIvs;
-	bool statsUniformDistribution;
+	DiscreteDistribution statsDist;
+	//bool statsUniformDistribution;
 
 	inline void ClearAllFilters() {
 		speciesFilter = nullptr, speciesFilterBuffer = nullptr;

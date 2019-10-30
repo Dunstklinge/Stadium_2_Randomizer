@@ -9,6 +9,8 @@
 #include "Constants.h"
 #include "DefRoster.h"
 #include "DefText.h"
+#include "PokemonTable.h"
+#include "MoveTable.h"
 #include "CustomRosterInfo.h"
 #include "CustomTrainerDefs.h"
 
@@ -79,8 +81,8 @@ private:
 		void Curate(bool forth);
 	}											m_customStrings;
 
-	
-
+	GameInfo::Move* m_customMoves = nullptr;
+	GameInfo::Pokemon* m_customPokemon = nullptr;
 	uint8_t* m_customItemRedirectCode = nullptr;
 	uint8_t* m_customItemInjectCode = nullptr;
 	uint8_t* m_customRentalRedirectCode = nullptr;
@@ -104,6 +106,8 @@ private:
 
 	bool AnalyseRom();
 	CupRules GenerateCupRules();
+	void RandomizeSpecies();
+	void RandomizeMoves();
 	void RandomizeRegularRentals();
 	void RandomizeHackedRentals();
 	void RandomizeTrainers();

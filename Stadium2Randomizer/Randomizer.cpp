@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "Randomizer.h"
 
-#include<iostream>
+#include <iostream>
 #include <sstream>
 
 #include "CMainDialog.h"
@@ -11,6 +11,8 @@
 #include "Filters.h"
 #include "PokemonGenerator.h"
 #include "TrainerGenerator.h"
+#include "SpeciesGenerator.h"
+#include "MoveGenerator.h"
 #include "GlobalRandom.h"
 #include "GlobalConfigs.h"
 #include "DefFaces.h"
@@ -26,6 +28,8 @@ Randomizer::Randomizer(CMainDialog* settings)
 
 Randomizer::~Randomizer()
 {
+	delete[] m_customMoves, m_customMoves = nullptr;
+	delete[] m_customPokemon, m_customPokemon = nullptr;
 	delete[](uint8_t*)m_romRoster, m_romRoster = nullptr;
 	delete[](uint8_t*)m_romText, m_romText= nullptr;
 	delete[] m_customItemRedirectCode, m_customItemRedirectCode = nullptr;
@@ -53,7 +57,7 @@ void Randomizer::Randomize(const CString& path, CMainDialog * settings)
 void Randomizer::RandomizeRom(const CString & path)
 {
 	//setup general data
-	m_genLog.open("genLog.txt");						//logger
+	m_genLog.open("gen\\genLog.txt");						//logger
 
 	CString strSeed;
 	m_settings->edSeed.GetWindowText(strSeed);
@@ -91,6 +95,13 @@ void Randomizer::RandomizeRom(const CString & path)
 	//
 	// randomize data
 	//
+
+	if (m_settings->uberSpeciesBst || m_settings->uberSpeciesTypes) {
+		RandomizeSpecies();
+	}
+	if (m_settings->uberMoves) {
+		RandomizeMoves();
+	}
 
 	if (m_settings->randRentals) {
 		m_progressPartMinPercent = 0.0;
@@ -330,8 +341,8 @@ void Randomizer::RandomizeRegularRentals()
 	pokeGen.randEvs = m_settings->randEvIv;
 	pokeGen.randIvs = m_settings->randEvIv;
 	pokeGen.bstEvIvs = m_settings->rentalSpeciesEvIv;
-	pokeGen.statsUniformDistribution = m_settings->randEvIvUniformDist;
-	pokeGen.levelUniformDistribution = m_settings->randLevelsUniformDist;
+	pokeGen.statsDist = m_settings->randEvIvDist;
+	pokeGen.levelDist = m_settings->randLevelsDist;
 	pokeGen.changeHappiness = m_settings->randRentalHappiness;
 
 	{
@@ -405,6 +416,94 @@ void Randomizer::RandomizeRegularRentals()
 	m_genLog << "... generating rentals done!\n";
 }
 
+void Randomizer::RandomizeSpecies()
+{
+	m_customPokemon = new GameInfo::Pokemon[_countof(GameInfo::Pokemons)];
+	memcpy_s(m_customPokemon, sizeof(GameInfo::Pokemons), GameInfo::Pokemons, sizeof(GameInfo::Pokemons));
+	std::vector<bool> monDone;
+	monDone.resize(_countof(GameInfo::Pokemons));
+
+	SpeciesGenerator speciesGen;
+	speciesGen.randomType = m_settings->uberSpeciesTypes;
+	speciesGen.gainSecondTypeChance = _ttoi(m_settings->uberSpeciesAddTypePercent);
+	speciesGen.looseSecondTypeChance = _ttoi(m_settings->uberSpeciesRemTypePercent);
+
+	speciesGen.randomStats = m_settings->uberSpeciesBst;
+	speciesGen.bstDist = m_settings->uberSpeciesBstDist;
+	speciesGen.statDist = m_settings->uberSpeciesBstDist;
+	speciesGen.dontDecreaseEvolutionBST = m_settings->uberSpeciesEvoBst;
+	speciesGen.dontDecreaseEvolutionStats = m_settings->uberSpeciesEvoStats;
+	speciesGen.keepBST = m_settings->uberSpeciesBstButtons == 0;
+	speciesGen.stayCloseBST = m_settings->uberSpeciesBstButtons == 1;
+	speciesGen.randomBST = m_settings->uberSpeciesBstButtons == 2;
+	speciesGen.context = m_customPokemon;
+
+	//c++ lambdas cant do recursive, but i cant be arsed to make a new method right now
+	const auto gen = [&](int i) {
+		auto genimp = [&](int i, auto& rec) {
+			if (monDone[i]) return;
+			if (GameInfo::PokemonPrevEvo[i] != GameInfo::NO_POKEMON) {
+				rec(GameInfo::PokemonPrevEvo[i] - 1);
+			}
+			GameInfo::Pokemon& mon = m_customPokemon[i];
+			mon = speciesGen.Generate(i, mon);
+			monDone[i] = true;
+		};
+	};
+	for (int i = 0; i < 251; i++) {
+		gen(i);
+	}
+	m_romReplacements.emplace_back(RomReplacements{ (uint8_t*)m_customPokemon, sizeof(GameInfo::Pokemons), 0x98f20 });
+
+	m_genLog << "Generating Species: \n";
+	auto& textIt = m_romText->begin()[TableInfo::POKEMON_NAMES];
+	for (int i = 0; i < 251; i++) {
+		auto& mon = m_customPokemon[i];
+		m_genLog << textIt[i] << ":\t" << std::string(5 - (strlen(textIt[i]) + 1) / 4, '\t')
+			<< GameInfo::TypeNames[mon.type1] << "/" << GameInfo::TypeNames[mon.type2] << "\t\t"
+			<< "bsts: " << (int)mon.baseHp << " " << (int)mon.baseAtk << " " << (int)mon.baseDef << " " << (int)mon.baseSpd << " "
+			<< (int)mon.baseSpA << " " << (int)mon.baseSpD << "\n";
+	}
+}
+void Randomizer::RandomizeMoves()
+{
+	MoveGenerator moveGen;
+	moveGen.balanced = m_settings->uberMovesBalance;
+	moveGen.randomType = m_settings->uberMovesType;
+	moveGen.randomAcc = m_settings->uberMovesAcc;
+	moveGen.accDist = m_settings->uberMovesAccDist;
+	moveGen.randomPp = m_settings->uberMovesPp;
+	moveGen.ppDist = m_settings->uberMovesPpDist;
+	moveGen.randomBp = m_settings->uberMovesBp;
+	moveGen.stayCloseToBp = m_settings->uberMovesCloseBp;
+	moveGen.bpDist = m_settings->uberMovesBpDist;
+	moveGen.randomSecondary = m_settings->uberMovesSecEffect;
+	moveGen.gainSecondaryEffectChance = _ttoi(m_settings->uberMovesSecAddPercent);
+	moveGen.looseSecondaryEffectChance = _ttoi(m_settings->uberMovesSecRemPercent);
+	moveGen.randomEffectChance = m_settings->uberMovesSecEffectChance;
+	moveGen.ecDist = m_settings->uberMovesSecEffectChanceDist;
+	moveGen.randomStatusMoveEffect = m_settings->uberMovesStatusMoves;
+
+	m_customMoves = new GameInfo::Move[_countof(GameInfo::Moves)];
+	memcpy_s(m_customMoves, sizeof(GameInfo::Moves), GameInfo::Moves, sizeof(GameInfo::Moves));
+	for (int i = 0; i < _countof(GameInfo::Moves); i++) {
+		GameInfo::Move& move = m_customMoves[i];
+		move = moveGen.Generate(move);
+	}
+	m_romReplacements.emplace_back(RomReplacements{ (uint8_t*)m_customMoves, sizeof(GameInfo::Moves), 0x98430 });
+
+	m_genLog << "Generating Moves: \n";
+	auto& textIt = m_romText->begin()[TableInfo::MOVE_NAMES];
+	for (int i = 0; i < 250; i++) {
+		auto& move = m_customMoves[i];
+		m_genLog << textIt[i] << ":\t" << std::string(5 - (strlen(textIt[i]) + 1) / 4, '\t')
+			<< (int)move.basePower << "bp\t" << (move.basePower <= 9 ? "\t" : "") << (int)move.pp << "/" << (int)move.pp << "pp\t"
+			<< (int)move.accuracy << "/255acc\t" << GameInfo::TypeNames[move.type] << "\t"
+			<< (int)move.effectId << "[" << GameInfo::MoveEffectInfos[move.effectId].name << "]" << "\t(" << (int)move.effectChance << "/255 chance)"
+			<< "\t rated " << moveGen.RateMove(move) << "\n";
+	}
+}
+
 void Randomizer::RandomizeHackedRentals()
 {
 	if (!m_settings->moreRentalTables) return;
@@ -419,8 +518,8 @@ void Randomizer::RandomizeHackedRentals()
 	pokeGen.randEvs = m_settings->randEvIv;
 	pokeGen.randIvs = m_settings->randEvIv;
 	pokeGen.bstEvIvs = m_settings->rentalSpeciesEvIv;
-	pokeGen.statsUniformDistribution = m_settings->randEvIvUniformDist;
-	pokeGen.levelUniformDistribution = m_settings->randLevelsUniformDist;
+	pokeGen.statsDist = m_settings->randEvIvDist;
+	pokeGen.levelDist = m_settings->randLevelsDist;
 	pokeGen.changeHappiness = m_settings->randRentalHappiness;
 
 	{
@@ -678,10 +777,10 @@ void Randomizer::RandomizeTrainers()
 	tgen.gen.changeEvsIvs = m_settings->trainerRandEvIv;
 	tgen.gen.randEvs = m_settings->trainerRandEvIv;
 	tgen.gen.randIvs = m_settings->trainerRandEvIv;
-	tgen.gen.statsUniformDistribution = m_settings->trainerRandIvEvUniform;
+	tgen.gen.statsDist = m_settings->trainerRandIvEvDist;
 	tgen.gen.changeHappiness = m_settings->trainerRandHappiness;
 	tgen.gen.changeItem = m_settings->trainerRandItems;
-	tgen.gen.levelUniformDistribution = m_settings->randLevelsUniformDist;
+	tgen.gen.levelDist = m_settings->randLevelsDist;
 	tgen.stayCloseToBST = m_settings->stayCloseToBST;
 	tgen.stayCloseToBSTThreshold = 30;
 
@@ -1047,6 +1146,7 @@ void Randomizer::SortInjectedData()
 	m_romReplacements.emplace_back( RomReplacements{ (uint8_t*)m_romRoster, DefRoster::segSize, DefRoster::offStart });
 	m_romText->Curate(false);;
 	m_romReplacements.emplace_back( RomReplacements{ (uint8_t*)m_romText, DefText::segSize, DefText::offStart });
+
 
 	//new data is more complicated: code, custom info tables, item lists, rental mons
 	bool insertItemData = m_customIInfoTable.size() > 1;

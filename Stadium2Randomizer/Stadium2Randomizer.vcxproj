@@ -127,6 +127,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="CDistDialog.cpp" />
     <ClCompile Include="CMain.cpp" />
     <ClCompile Include="CMainDialog.cpp" />
     <ClCompile Include="Constants.cpp" />
@@ -139,10 +140,12 @@
     <ClCompile Include="DefText.cpp" />
     <ClCompile Include="DefTrainer.cpp" />
     <ClCompile Include="Filters.cpp" />
+    <ClCompile Include="DiscreteDistribution.cpp" />
     <ClCompile Include="GlobalConfigs.cpp" />
     <ClCompile Include="GlobalRandom.cpp" />
     <ClCompile Include="ItemTable.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="MoveEffectValue.cpp" />
     <ClCompile Include="MoveGenerator.cpp" />
     <ClCompile Include="MoveTable.cpp" />
     <ClCompile Include="PokemonGenerator.cpp" />
@@ -161,6 +164,7 @@
     <ClCompile Include="Util.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CDistDialog.h" />
     <ClInclude Include="CMain.h" />
     <ClInclude Include="CMainDialog.h" />
     <ClInclude Include="Constants.h" />
@@ -175,9 +179,11 @@
     <ClInclude Include="DefTrainer.h" />
     <ClInclude Include="Filters.h" />
     <ClInclude Include="GeneratorUtil.h" />
+    <ClInclude Include="DiscreteDistribution.h" />
     <ClInclude Include="GlobalConfigs.h" />
     <ClInclude Include="GlobalRandom.h" />
     <ClInclude Include="ItemTable.h" />
+    <ClInclude Include="MoveEffectValue.h" />
     <ClInclude Include="MoveGenerator.h" />
     <ClInclude Include="MoveTable.h" />
     <ClInclude Include="PokemonNicknames.h" />

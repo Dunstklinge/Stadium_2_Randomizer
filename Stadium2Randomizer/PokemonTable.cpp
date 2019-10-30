@@ -5,7 +5,7 @@
 #include <string.h>
 
 namespace GameInfo {
-	Pokemon Pokemons[256] = { 0 };					//1 based (for some reason, its like that in the rom)
+	Pokemon Pokemons[256] = { 0 };					//0 based (note that pokemon ids are 1 based, so do id - 1)
 	LevelupMoves PokemonLevelupMoveEntries[251];	//0 based (its like that in the rom)
 	PokemonGen1TMsEntry PokemonGen1Tms[151];		//0 based
 	PokemonLegalMovesEntry PokemonLegalMoves[251];	//0 based
@@ -27,7 +27,7 @@ namespace GameInfo {
 				};
 				//start with glc tms
 				for (int tm = 0; tm < sizeof(GameInfo::TmsGlc); tm++) {
-					if ((Pokemons[i + 1].tms[tm / 8] >> (tm % 8)) & 1) {
+					if ((Pokemons[i].tms[tm / 8] >> (tm % 8)) & 1) {
 						PokemonLegalMoves_BaseList.push_back(TmsGlc[tm]);
 					}
 				}
@@ -80,7 +80,7 @@ namespace GameInfo {
 		//TODO: maybe read from config file
 
 		//note that bulbasaur appears to be 1 so 0 must hold a special meaning
-		memcpy(Pokemons+1, PokemonRawData, sizeof(PokemonRawData));
+		memcpy(Pokemons, PokemonRawData, sizeof(PokemonRawData));
 
 
 		//levelup move list

@@ -28,11 +28,15 @@ namespace GameInfo {
 		};
 		uint8_t tms[8];	//glc only; lobit to hibit, left to right
 
-		unsigned int CalcBST() { return baseHp + baseAtk + baseDef + baseSpd + baseSpA + baseSpD; }
+		unsigned int CalcBST() const { return baseHp + baseAtk + baseDef + baseSpd + baseSpA + baseSpD; }
 	};
 	static_assert(sizeof(Pokemon) == 22, "size missmatch");
 
 	//not actually part of the game, i made this myself
+	/*struct EvoInfo {
+		PokemonId preEvo;
+		int lineLength;
+	};*/
 	extern PokemonId PokemonPrevEvo[256];
 
 	//moves are defined from 0x98f20 to 0x9a4b2

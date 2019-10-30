@@ -2,20 +2,20 @@
 
 bool FilterPokemonByBST(GameInfo::PokemonId mon, unsigned int minBST, unsigned int maxBST)
 {
-	unsigned int bst = GameInfo::Pokemons[mon].CalcBST();
+	unsigned int bst = GameInfo::Pokemons[mon-1].CalcBST();
 	return minBST <= bst && bst <= maxBST;
 }
 
 bool FilterMoveByBP(GameInfo::MoveId mov, unsigned int minBP, unsigned int maxBP)
 {
-	unsigned int bp = GameInfo::Moves[mov].basePower;
+	unsigned int bp = GameInfo::Moves[mov-1].basePower;
 	return minBP <= bp && bp <= maxBP;
 }
 
 bool FilterMoveByStab(GameInfo::MoveId mov, GameInfo::PokemonId mon)
 {
-	const GameInfo::Pokemon& monDef = GameInfo::Pokemons[mon];
-	const GameInfo::Move& moveDef = GameInfo::Moves[mov];
+	const GameInfo::Pokemon& monDef = GameInfo::Pokemons[mon-1];
+	const GameInfo::Move& moveDef = GameInfo::Moves[mov-1];
 	return moveDef.basePower > 0 && (monDef.type1 == moveDef.type || monDef.type2 == moveDef.type);
 }
 

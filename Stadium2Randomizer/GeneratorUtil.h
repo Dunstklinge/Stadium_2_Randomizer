@@ -1,5 +1,7 @@
 #pragma once
 
+#include <random>
+
 /*
  * makes a buffer of possible values out of a given filter buffer as well as a filter function.
  */
@@ -71,21 +73,3 @@ void FilterBufferGenerateOrDefault(
 }
 
 
-class discrete_normal_distribution : public std::normal_distribution<double> {
-	int min;
-	int max;
-	double nStandardDerivations;
-public:
-	discrete_normal_distribution(int min, int max, double nStandardDerivations)
-		: normal_distribution((min + max) / 2.0, (max-min) / (2*nStandardDerivations))
-	{
-		this->min = min;
-		this->max = max;
-		this->nStandardDerivations = nStandardDerivations;
-	}
-
-	template <typename Generator>
-	int operator()(Generator& gen) {
-		return std::clamp((int)std::round(normal_distribution<double>::operator()(gen)), min, max);
-	}
-};

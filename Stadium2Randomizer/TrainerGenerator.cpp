@@ -15,11 +15,9 @@ TrainerGenerator::TrainerGenerator()
 
 	gen.minLevel = 100;
 	gen.maxLevel = 100;
-	gen.levelUniformDistribution = true;
 	gen.randEvs = true;
 	gen.randIvs = true;
 	gen.bstEvIvs = false;
-	gen.statsUniformDistribution = false;
 
 	usefulItem = false;
 	stayCloseToBST = true;
@@ -82,7 +80,7 @@ DefTrainer TrainerGenerator::Generate(const DefTrainer & from)
 
 			//to prevent doubles, we generate a viable pokemon array manually from both their buffer and our filter
 			//and ignore previous pokemon
-			SatUAr oldBst = GameInfo::Pokemons[ret.pokemon[i].species].CalcBST();
+			SatUAr oldBst = GameInfo::Pokemons[ret.pokemon[i].species - 1].CalcBST();
 			unsigned int minBst = oldBst - stayCloseToBSTThreshold;
 			unsigned int maxBst = oldBst + stayCloseToBSTThreshold;
 			GameInfo::PokemonId validSpecies[256];
