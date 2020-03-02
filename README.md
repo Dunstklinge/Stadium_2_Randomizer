@@ -1,11 +1,28 @@
 ## A Randomizer for Pokemon Stadium 2.
 
-Uses MFC, so probably windows only.
+# IMPORTANT NOTE FOR PROJECT64 USERS:
+Some Settings cause project 64 with default settings to freeze randomly.
+Those freezes usually happen during the intro screen, when selecting a cup, when viewing rentals, or on certain moves.
+To fix these crashes, do the following:
+1: Launch a pokemon stadium 2 rom (randomized or not, doesnt matter)
+2: Go to Options -> Settings
+3: Expand Config: POKEMON STADIUM 2 (this option only appears after you launched the ROM)
+4: Go to Recompiler
+5: change "CPU Core Style" from "Recompiler" to "Interpreter".
+6: click apply
+7: close pj64 and reopen it
+That should fix the freezes.
+Mupen does not seem to have this problem.
+
+# Description
 
 Heres a screenshot of the UI to see what it does:
 
 ![Main Dialog](https://github.com/Dunstklinge/Stadium2Randomizer/blob/master/UISnapshot.jpg)
 ![Distribtion Dialog](https://github.com/Dunstklinge/Stadium2Randomizer/blob/master/UISnapshot2.jpg)
+
+Uses MFC, so probably windows only. Or maybe it works in Wine, i don't know.
+
 
 Current limitations:
 
