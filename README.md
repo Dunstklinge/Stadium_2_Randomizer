@@ -5,7 +5,7 @@ Some Settings cause project 64 with default settings to freeze randomly.
 Those freezes usually happen during the intro screen, when selecting a cup, when viewing rentals, or on certain moves.
 To fix these crashes, do the following:
 
-1. Launch a pokemon stadium 2 rom (randomized or not, doesnt matter)
+1. Launch a pokemon stadium 2 rom
 2. Go to Options -> Settings
 3. Expand Config: POKEMON STADIUM 2 (this option only appears after you launched the ROM)
 4. Go to Recompiler
