@@ -154,22 +154,40 @@ void Randomizer::RandomizeRom(const CString & path)
 			}
 			out.close();
 
-			if (m_needsNewCrc) {
+			bool touchedCrcArea = false;
+			for (auto& rep : m_romReplacements) {
+				if (rep.romOffset < CHECKSUM_END) {
+					touchedCrcArea = true;
+					break;
+				}
+			}
+			if (touchedCrcArea) {
 				uint8_t* checksumPartBuffer = new uint8_t[CHECKSUM_END];
 				m_in.open(dlg.GetPathName(), std::ifstream::binary);
 				m_in.seekg(0);
 				m_in.read((char*)checksumPartBuffer, CHECKSUM_END);
 				DoSwaps(checksumPartBuffer, CHECKSUM_END);
 
-				uint32_t newCrcs[2];
-				bool crcSuc = CalculateCrcs(newCrcs, checksumPartBuffer);
-				if (crcSuc) {
-					SwitchEndianness(newCrcs[0]);
-					SwitchEndianness(newCrcs[1]);
-					//crcs are at 0x10 and 0x14
-					*((uint32_t*)(checksumPartBuffer + 0x10)) = newCrcs[0];
-					*((uint32_t*)(checksumPartBuffer + 0x14)) = newCrcs[1];
+				if (m_settings->patchCic) {
+					//instead of recalculation CRCs, patch the bootcode
+					//stadium 2 has CIC version 6103 - we nop at address 0x63C and 0x648
+					*((uint32_t*)(checksumPartBuffer + 0x63c)) = 0;
+					*((uint32_t*)(checksumPartBuffer + 0x648)) = 0;
 				}
+				else {
+					//recalculate CRCs and replace them
+					uint32_t newCrcs[2];
+					bool crcSuc = CalculateCrcs(newCrcs, checksumPartBuffer);
+					if (crcSuc) {
+						SwitchEndianness(newCrcs[0]);
+						SwitchEndianness(newCrcs[1]);
+						//crcs are at 0x10 and 0x14
+						*((uint32_t*)(checksumPartBuffer + 0x10)) = newCrcs[0];
+						*((uint32_t*)(checksumPartBuffer + 0x14)) = newCrcs[1];
+					}
+				}
+				
+				
 
 				DoSwaps(checksumPartBuffer, CHECKSUM_END);
 
@@ -443,12 +461,13 @@ void Randomizer::RandomizeSpecies()
 		auto genimp = [&](int i, auto& rec) {
 			if (monDone[i]) return;
 			if (GameInfo::PokemonPrevEvo[i] != GameInfo::NO_POKEMON) {
-				rec(GameInfo::PokemonPrevEvo[i] - 1);
+				rec(GameInfo::PokemonPrevEvo[i] - 1, rec);
 			}
 			GameInfo::Pokemon& mon = m_customPokemon[i];
 			mon = speciesGen.Generate(i, mon);
 			monDone[i] = true;
 		};
+		genimp(i, genimp);
 	};
 	for (int i = 0; i < 251; i++) {
 		gen(i);
@@ -603,12 +622,16 @@ void Randomizer::RandomizeHackedRentals()
 			AddRentalSet(tid(30), GenRentalSetAndAdd(POKECUP));
 			AddRentalSet(tid(31), GenRentalSetAndAdd(POKECUP));
 			AddRentalSet(tid(32), GenRentalSetAndAdd(POKECUP));
-			//littlecup
-			AddRentalSet(tid(33), GenRentalSetAndAdd(LITTLECUP));
-			//primecup r2 has its own allready, so no need for it
-			AddRentalSet(tid(34),-1); //end it
+		}
+		else {
+			//all pokecups
+			AddRentalSet(tid(29), GenRentalSetAndAdd(POKECUP));
 		}
 
+		//littlecup
+		AddRentalSet(tid(33), GenRentalSetAndAdd(LITTLECUP));
+		//primecup r2 has its own allready, so no need for it
+		AddRentalSet(tid(34), -1); //end it
 		SetPartialProgress(0.7);
 
 		if (m_settings->multipleGlcRentals) {
@@ -1250,25 +1273,21 @@ void Randomizer::SortInjectedData()
 		m_genItemTableOffset = AddDataVec(m_customIInfoTable);
 		m_genLog << "placed custom item table header at " << m_genItemTableOffset << "\n";
 		InjectedItem::SetInjectionTableAddress(m_customItemInjectCode, m_genItemTableOffset + 0xB0000000);
-		m_needsNewCrc = true;
 	}
 	if (insertRentalData) {
 		m_genRosterTableOffset = AddDataVec(m_customRInfoTable);
 		m_genLog << "placed custom rental table header at " << m_genRosterTableOffset << "\n";
 		InjectedRental::SetInjectionTableAddress(m_customRentalInjectCode, m_genRosterTableOffset + 0xB0000000);
-		m_needsNewCrc = true;
 	}
 	if (insertFaceData) {
 		m_genFaceTableOffset = AddDataVec(m_customFInfoTable);
 		m_genLog << "placed custom face table header at " << m_genFaceTableOffset << "\n";
 		InjectedFace2::SetInjectionTableAddress(m_customFaceInjectCode, m_genFaceTableOffset + 0xB0000000);
-		m_needsNewCrc = true;
 	}
 	if (insertStringData) {
 		m_genStringTableOffset = AddDataVec(m_customStrings.tables);
 		m_genLog << "placed custom face table header at " << m_genStringTableOffset << "\n";
 		InjectedStringsHelper::SetInjectionTableAddress(m_customStringsHelperInjectCode, m_genStringTableOffset + 0xB0000000);
-		m_needsNewCrc = true;
 	}
 	SetPartialProgress(0.4);
 

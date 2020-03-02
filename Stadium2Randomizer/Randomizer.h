@@ -50,8 +50,6 @@ private:
 	std::ofstream m_genLog;
 	std::ifstream m_in;
 
-	bool m_needsNewCrc;
-
 	struct RomReplacements {
 		uint8_t* buffer;
 		uint32_t bufferSize;

@@ -99,8 +99,8 @@ uint8_t SpeciesGenerator::GetRandomType()
 uint8_t SpeciesGenerator::GetRandomType(uint8_t exclude)
 {
 	uint8_t rand = Random::GetInt(0, 15);
+	if (rand >= exclude) rand++;
 	if (rand > GameInfo::ROCK) rand += 1;
 	if (rand > GameInfo::STEEL) rand += 0x0A;
-	if (rand >= exclude) rand++;
 	return rand;
 }

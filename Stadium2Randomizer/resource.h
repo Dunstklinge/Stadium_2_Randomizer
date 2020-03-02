@@ -110,6 +110,8 @@
 #define IDC_ED_5                        1117
 #define IDC_SPIN4                       1117
 #define IDC_SLIDERMIN                   1118
+#define IDC_CHECK1                      1118
+#define IDC_PATCHCIC                    1118
 #define IDC_SLIDERMAX                   1119
 #define IDC_SLIDER_1                    1120
 #define IDC_SLIDER_2                    1121
@@ -130,7 +132,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        105
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1118
+#define _APS_NEXT_CONTROL_VALUE         1119
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

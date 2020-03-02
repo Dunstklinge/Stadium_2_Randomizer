@@ -5,7 +5,7 @@
 #include <string.h>
 
 namespace GameInfo {
-	Pokemon Pokemons[256] = { 0 };					//0 based (note that pokemon ids are 1 based, so do id - 1)
+	Pokemon Pokemons[251] = { 0 };					//0 based (note that pokemon ids are 1 based, so do id - 1)
 	LevelupMoves PokemonLevelupMoveEntries[251];	//0 based (its like that in the rom)
 	PokemonGen1TMsEntry PokemonGen1Tms[151];		//0 based
 	PokemonLegalMovesEntry PokemonLegalMoves[251];	//0 based
@@ -80,6 +80,7 @@ namespace GameInfo {
 		//TODO: maybe read from config file
 
 		//note that bulbasaur appears to be 1 so 0 must hold a special meaning
+		static_assert(sizeof(Pokemons) == sizeof(PokemonRawData), "Pokemon Raw Data has wrong size");
 		memcpy(Pokemons, PokemonRawData, sizeof(PokemonRawData));
 
 

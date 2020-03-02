@@ -43,7 +43,7 @@ namespace GameInfo {
 	uint8_t constexpr PokemonRawData[] = {
 		#include "PokemonRawData.txt" 
 	};
-	extern Pokemon Pokemons[256];
+	extern Pokemon Pokemons[251];
 
 	//multiple of these might exist for the same move if multiple ways to optain it are present.
 	struct LevelupMoveEntry {
