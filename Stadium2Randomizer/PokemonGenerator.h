@@ -2,7 +2,9 @@
 
 #include <random>
 #include <functional>
+#include <vector>
 
+#include "GameContext.h"
 #include "DefPokemon.h"
 #include "Tables.h"
 #include "Constants.h"
@@ -12,6 +14,7 @@ class PokemonGenerator
 {
 public:
 	PokemonGenerator();
+	PokemonGenerator(GameContext context);
 	~PokemonGenerator();
 
 	DefPokemon Generate();
@@ -27,32 +30,44 @@ public:
 	bool changeHappiness;
 
 	/* new generation info */ 
+
+	template<typename Id>
+	struct Filter {
+		std::function<bool(Id, GameInfo::PokemonId)> func = nullptr;
+		const Id* buffer = nullptr;
+		unsigned bufferN = 0;
+
+		explicit operator bool() const {
+			return func == nullptr && (buffer == nullptr || bufferN == 0);
+		}
+	};
+	template<>
+	struct Filter<GameInfo::PokemonId> {
+		std::function<bool(GameInfo::PokemonId)> func = nullptr;
+		const GameInfo::PokemonId* buffer = nullptr;
+		unsigned bufferN = 0;
+
+		explicit operator bool() const {
+			return func == nullptr && (buffer == nullptr || bufferN == 0);
+		}
+	};
 	
 	//for species only, BOTH filter and buffer are used
-	std::function<bool(GameInfo::PokemonId)> speciesFilter = nullptr; //for std::bind compatibility, even though its painfully slow
-	const GameInfo::PokemonId* speciesFilterBuffer = nullptr;
-	unsigned int speciesFilterBufferN;
-
+	Filter<GameInfo::PokemonId> speciesFilter;
 
 	int minLevel;
 	int maxLevel;
 	DiscreteDistribution levelDist;
-	//bool levelUniformDistribution; //use binomial distribution if false
 
-	//bool (*itemFilter)(GameInfo::ItemId) = nullptr;
-	std::function<bool(GameInfo::ItemId, GameInfo::PokemonId)> itemFilter = nullptr;
-	const GameInfo::ItemId* itemFilterBuffer = nullptr;
-	unsigned int itemFilterBufferN;
-	bool includeTypeSpeciesSpecific;
+	Filter<GameInfo::ItemId> itemFilter;
+	
+	Filter<GameInfo::MoveId> minOneMoveFilter;
+	enum MoveRandMode {
+		EqualChance, BasedOnOldMovePower, BasedOnSpeciesBst
+	} moveRandMove;
+	DiscreteDistribution movePowerDist;
 
-	//bool (*minOneMoveFilter)(GameInfo::MoveId move, GameInfo::PokemonId mon) = nullptr;
-	std::function<bool(GameInfo::MoveId, GameInfo::PokemonId)> minOneMoveFilter = nullptr;
-	const GameInfo::MoveId* minOneMoveFilterBuffer = nullptr;
-	unsigned int minOneMoveFilterBufferN;
-
-	std::function<bool(GameInfo::MoveId, GameInfo::PokemonId)> generalMoveFilter = nullptr;
-	const GameInfo::MoveId* generalMoveFilterBuffer = nullptr;
-	unsigned int generalMoveFilterBufferN = 0;
+	Filter<GameInfo::MoveId> generalMoveFilter;
 	
 	bool randEvs;
 	bool randIvs;
@@ -61,10 +76,11 @@ public:
 	//bool statsUniformDistribution;
 
 	inline void ClearAllFilters() {
-		speciesFilter = nullptr, speciesFilterBuffer = nullptr;
-		itemFilter = nullptr, itemFilterBuffer = nullptr;
-		//minOneMoveFilter = nullptr, minOneMoveFilterBuffer = nullptr;
-		generalMoveFilter = nullptr, generalMoveFilterBuffer = nullptr;
+		speciesFilter = Filter<GameInfo::PokemonId>{};
+		itemFilter = Filter<GameInfo::ItemId>{};
+		//minOneMoveFilter = Filter<GameInfo::MoveId>{};
+		generalMoveFilter = Filter<GameInfo::MoveId>{};
+		cache = Cache{};
 	}
 private:
 	void GenSpecies(DefPokemon& mon);
@@ -73,6 +89,25 @@ private:
 	void GenHappiness(DefPokemon& mon);
 	void GenMoves(DefPokemon& mon);
 	void GenItem(DefPokemon& mon);
+	void GenMovesBasedOnOldMovePower(DefPokemon& mon);
 
+	struct Cache {
+		std::vector<GameInfo::PokemonId> species;
+		std::vector<GameInfo::ItemId> items;
+		std::vector<GameInfo::MoveId> moves;
+		std::vector<GameInfo::MoveId> min1Moves;
+	};
+	Cache cache;
+
+	GameContext context;
+
+	template<typename T, unsigned size>
+	void Refresh(GameInfo::PokemonId species, Filter<T>& filter, std::vector<T>& cache, const T (&baseBuffer)[size]);
+	template<typename T, typename It>
+	void Refresh(GameInfo::PokemonId species, Filter<T>& filter, std::vector<T>& cache, It iterator, unsigned size);
+	void RefreshSpecies();
+	void RefreshItems(GameInfo::PokemonId species);
+	void RefreshMoves(GameInfo::PokemonId species);
+	void RefreshMin1Moves(GameInfo::PokemonId species);
 };
 

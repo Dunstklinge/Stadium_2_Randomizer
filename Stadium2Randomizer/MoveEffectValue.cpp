@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "MoveEffectValue.h"
+#include "GlobalConfigs.h"
 
 #include <fstream>
 #include <string>
@@ -117,4 +118,55 @@ MoveEffectValue::MoveEffectValue(const char* filename)
 
 MoveEffectValue::~MoveEffectValue()
 {
+}
+
+double RateMove(const GameInfo::Move& move)
+{
+	double result = 0;
+
+	result = move.basePower * (move.accuracy / 255.0);
+	if (move.pp < 20 && move.pp >= 15) {
+		result *= 0.95;
+	}
+	else if (move.pp < 15 && move.pp >= 10) {
+		result *= 0.9;
+	}
+	else if (move.pp < 10 && move.pp >= 7) {
+		result *= 0.85;
+	}
+	else if (move.pp < 7 && move.pp >= 5) {
+		result *= 0.8;
+	}
+	else if (move.pp < 5) {
+		result *= move.pp / 5.0 * 0.8;
+	}
+
+	auto it = GlobalConfig::MoveEffectValues.data.find((GameInfo::MoveEffect)move.effectId);
+	if (it != GlobalConfig::MoveEffectValues.data.end()) {
+		auto info = it->second;
+		bool chance = ((GameInfo::MoveEffectInfos[it->first].flags & GameInfo::MoveEffectInfo::CHANCE_PARAMETER) == GameInfo::MoveEffectInfo::CHANCE_PARAMETER);
+		bool acc = ((GameInfo::MoveEffectInfos[it->first].flags & GameInfo::MoveEffectInfo::NOT_TARGETED) != GameInfo::MoveEffectInfo::NOT_TARGETED);
+		const auto scaleIf = [&](double& d) {
+			if (chance) { chance = false; d = d * (move.effectChance / 255.0); }
+		};
+		const auto scaleAccIf = [&](double& d) {
+			if (acc) { acc = false; d = d * (move.accuracy / 255.0); }
+		};
+
+		if (info.affects & info.USE_VALUE) {
+			scaleIf(info.c);
+			scaleAccIf(info.c);
+			result = info.c;
+		}
+		if (info.affects & info.FLAT_BONUS) {
+			scaleIf(info.a);
+			scaleAccIf(info.a);
+			result += info.a;
+		}
+		if (info.affects & info.MULT_BP) {
+			scaleIf(info.m);
+			result += (info.m - 1) * move.basePower;
+		}
+	}
+	return result;
 }

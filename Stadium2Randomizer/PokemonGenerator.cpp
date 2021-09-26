@@ -4,9 +4,13 @@
 #include "Tables.h"
 #include "GlobalRandom.h"
 #include "GeneratorUtil.h"
+#include "MoveEffectValue.h"
 
+PokemonGenerator::PokemonGenerator() : PokemonGenerator(DefaultContext)
+{
+}
 
-PokemonGenerator::PokemonGenerator()
+PokemonGenerator::PokemonGenerator(GameContext context) : context(context)
 {
 	changeSpecies = true;
 	changeEvsIvs = true;
@@ -15,22 +19,11 @@ PokemonGenerator::PokemonGenerator()
 	changeItem = true;
 	changeHappiness = true;
 
-	speciesFilter = nullptr;
-	speciesFilterBuffer = nullptr;
-
 	minLevel = 100;
 	maxLevel = 100;
 	levelDist = DiscreteDistribution(0, 100);
 
-	itemFilter = nullptr;
-	itemFilterBuffer = nullptr;
-	includeTypeSpeciesSpecific = false;
-
-	minOneMoveFilter = nullptr;
-	minOneMoveFilterBuffer = nullptr;
-
-	generalMoveFilter = nullptr;
-	generalMoveFilterBuffer = nullptr;
+	moveRandMove = MoveRandMode::EqualChance;
 
 	randEvs = true;
 	randIvs = true;
@@ -94,38 +87,69 @@ DefPokemon PokemonGenerator::Generate(const DefPokemon & from)
 	return mon;
 }
 
-void PokemonGenerator::GenSpecies(DefPokemon & mon)
-{
-	const GameInfo::PokemonId* monList = nullptr;
-	unsigned int monListN;
-	if (speciesFilterBuffer) {
-		monList = speciesFilterBuffer;
-		monListN = speciesFilterBufferN;
+template<typename T, typename It>
+void PokemonGenerator::Refresh(GameInfo::PokemonId species, Filter<T>& filter, std::vector<T>& cache, It iterator, unsigned size) {
+	if (filter.buffer && filter.bufferN > 0)
+	{
+		cache.resize(filter.bufferN);
+		std::copy(filter.buffer, filter.buffer + filter.bufferN, cache.begin());
 	}
 	else {
-		monList = GameInfo::PokemonIds;
-		monListN = _countof(GameInfo::PokemonIds);
+		cache.resize(size);
+		std::copy(iterator, iterator + size, cache.begin());
 	}
-
-	if (speciesFilter) {
-		unsigned int legalMonsN = 0;
-		GameInfo::PokemonId legalMons[256];
-		for (int i = 0; i < monListN; i++) {
-			if (speciesFilter(monList[i])) {
-				legalMons[legalMonsN++] = monList[i];
-			}
-		}
-		if (legalMonsN > 0) {
-			std::uniform_int_distribution<int> dist(0, (int)legalMonsN-1);
-			mon.species = legalMons[dist(Random::Generator)];
-			return;
-		}
-	}
+	if (filter.func)
 	{
-		std::uniform_int_distribution<int> dist(0, monListN-1);
-		mon.species = monList[dist(Random::Generator)];
-		return;
+		cache.erase(std::remove_if(cache.begin(), cache.end(),
+			[&](T id) { return !filter.func(id, species); }
+		));
 	}
+}
+
+template<typename T, unsigned size>
+void PokemonGenerator::Refresh(GameInfo::PokemonId species, Filter<T>& filter, std::vector<T>& cache, const T(&baseBuffer)[size]) {
+	Refresh(species, filter, cache, baseBuffer, size);
+}
+
+//this one has to be copy pastad because the filter accepts one less parameter, as there is no species context when generating species
+void PokemonGenerator::RefreshSpecies() {
+	if (speciesFilter.buffer && speciesFilter.bufferN > 0)
+	{
+		cache.species.resize(speciesFilter.bufferN);
+		std::copy(speciesFilter.buffer, speciesFilter.buffer + speciesFilter.bufferN, cache.species.begin());
+	}
+	else {
+		cache.species.resize(_countof(GameInfo::PokemonIds));
+		std::copy(GameInfo::PokemonIds, GameInfo::PokemonIds + _countof(GameInfo::PokemonIds), cache.species.begin());
+	}
+	if (speciesFilter.func)
+	{
+		cache.species.erase(std::remove_if(cache.species.begin(), cache.species.end(),
+			[&](GameInfo::PokemonId id) { return !speciesFilter.func(id); }
+		));
+	}
+}
+
+void PokemonGenerator::RefreshItems(GameInfo::PokemonId species) {
+	Refresh(species, itemFilter, cache.items, GameInfo::ExistingItemMap);
+}
+
+void PokemonGenerator::RefreshMoves(GameInfo::PokemonId species) {
+	Refresh(species, generalMoveFilter, cache.moves, GameInfo::MoveIdList);
+}
+
+void PokemonGenerator::RefreshMin1Moves(GameInfo::PokemonId species) {
+	Refresh(species, minOneMoveFilter, cache.min1Moves, cache.moves.data(), cache.moves.size());
+}
+
+void PokemonGenerator::GenSpecies(DefPokemon & mon)
+{
+	RefreshSpecies();
+	if (cache.species.size() == 0)
+		return;
+	std::uniform_int_distribution<int> dist(0, cache.species.size()-1);
+	mon.species = cache.species[dist(Random::Generator)];
+	
 	
 }
 
@@ -150,7 +174,7 @@ void PokemonGenerator::GenEvsIvs(DefPokemon & mon)
 		constexpr double maxEvRange = 0.6; //in percent from ffff range
 		constexpr double maxIvRange = 0.5;
 
-		SatUAr bst = GameInfo::Pokemons[mon.species - 1].CalcBST();
+		SatUAr bst = context.pokeList[mon.species - 1].CalcBST();
 		SatUAr shiftedBst = std::clamp(bst.t, 200u, 680u) - 200; //from 0 to 480
 		//200 bst should always be FFFF, 680bst should always be 0.
 		if constexpr (false) {
@@ -221,167 +245,61 @@ void PokemonGenerator::GenHappiness(DefPokemon& mon)
 
 void PokemonGenerator::GenMoves(DefPokemon & mon)
 {
-	static GameInfo::MoveId genMoveList[256];
-	static unsigned int genMoveListN;
-	genMoveListN = 0;
-
-	if (generalMoveFilter) {
-		for (int i = 1; i <= GameInfo::LAST_MOVE; i++) {
-			if (generalMoveFilter((GameInfo::MoveId)i, mon.species)) {
-				genMoveList[genMoveListN++] = (GameInfo::MoveId)i;
-			}
-		}
-	}
+	RefreshMoves(mon.species);
+	
 	mon.move1 = mon.move2 = mon.move3 = mon.move4 = (GameInfo::MoveId)0;
 
-	const GameInfo::MoveId* baseMoveList = nullptr;
-	unsigned int baseMoveListN;
-	if (generalMoveFilter) {
-		baseMoveList = genMoveList;
-		baseMoveListN = genMoveListN;
-	}
-	else if (generalMoveFilterBuffer) {
-		baseMoveList = generalMoveFilterBuffer;
-		baseMoveListN = generalMoveFilterBufferN;
-	}
-	else {
-		baseMoveList = GameInfo::MoveIdList;
-		baseMoveListN = _countof(GameInfo::MoveIdList);
-	}
-
-	std::uniform_int_distribution<int> dist(0, baseMoveListN-1);
+	std::uniform_int_distribution<int> dist(0, cache.moves.size()-1);
 	//generate first move specially if requested
 	if (minOneMoveFilter) {
-		static unsigned int legalMovesN;
-		static GameInfo::MoveId legalMoves[256];
-		legalMovesN = 0;
-		for (unsigned int i = 0; i < baseMoveListN; i++) {
-			GameInfo::MoveId move = baseMoveList[i];
-			if (minOneMoveFilter(move, mon.species)) {
-				legalMoves[legalMovesN++] = move;
-			}
+		RefreshMin1Moves(mon.species);
+		if (cache.min1Moves.size() > 0) {
+			std::uniform_int_distribution<int> dist(0, (int)cache.min1Moves.size() - 1);
+			mon.move1 = cache.min1Moves[dist(Random::Generator)];
 		}
-		if (legalMovesN > 0) {
-			std::uniform_int_distribution<int> dist(0, (int)legalMovesN-1);
-			mon.move1 = legalMoves[dist(Random::Generator)];
-		}
-		
-	}
-	else if (minOneMoveFilterBuffer && minOneMoveFilterBufferN > 0) {
-		std::uniform_int_distribution<int> dist(0, (int)minOneMoveFilterBufferN - 1);
-		mon.move1 = minOneMoveFilterBuffer[dist(Random::Generator)];
 	}
 	if (mon.move1 == 0) {
-		mon.move1 = baseMoveList[dist(Random::Generator)];
+		mon.move1 = cache.moves[dist(Random::Generator)];
 	}
 
-	//prevent having the same move twice. note that this only works if every entry in basemovelist is unique
-	if (dist.b() == 0) return;
-	dist = std::uniform_int_distribution<int>(0, dist.b() - 1);
-	int iMove2 = dist(Random::Generator);
-	while(baseMoveList[iMove2] == mon.move1) iMove2++;
-	mon.move2 = baseMoveList[iMove2];
-	
-	if (dist.b() == 0) return;
-	dist = std::uniform_int_distribution<int>(0, dist.b() - 1);
-	int iMove3 = dist(Random::Generator);
-	while (baseMoveList[iMove3] == mon.move1 || baseMoveList[iMove3] == mon.move2) iMove3++;
-	mon.move3 = baseMoveList[iMove3];
+	//prevent having the same move twice, the lazy way.
+	//todo: implement a proper shifting approach (which will require to know
+	//the index of move1 in cache.moves)
+	if (cache.moves.size() < 2) return;
+	do {
+		mon.move2 = cache.moves[dist(Random::Generator)];
+	} while (mon.move2 == mon.move1);
+	if (cache.moves.size() < 3) return;
+	do {
+		mon.move3 = cache.moves[dist(Random::Generator)];
+	} while (mon.move3 == mon.move1 || mon.move3 == mon.move2);
+	if (cache.moves.size() < 4) return;
+	do {
+		mon.move4 = cache.moves[dist(Random::Generator)];
+	} while (mon.move4 == mon.move1 || mon.move4 == mon.move2 || mon.move4 == mon.move3);
 
-	if (dist.b() == 0) return;
-	dist = std::uniform_int_distribution<int>(0, dist.b() - 1);
-	int iMove4 = dist(Random::Generator);
-	while (baseMoveList[iMove4] == mon.move1 || baseMoveList[iMove4] == mon.move2
-		|| baseMoveList[iMove4] == mon.move3) iMove4++;
-	mon.move4 = baseMoveList[iMove4];
+
+}
+
+void PokemonGenerator::GenMovesBasedOnOldMovePower(DefPokemon& mon) {
+	double oldRating = RateMove(GameInfo::Moves[mon.move1]);
+	RefreshMoves(mon.species);
+	std::sort(cache.moves.begin(), cache.moves.end(), [&](GameInfo::MoveId lhs, GameInfo::MoveId rhs) {
+		return RateMove(context.moveList[lhs]) < RateMove(context.moveList[rhs]); 
+	});
+	if (minOneMoveFilter) {
+		RefreshMin1Moves(mon.species);
+		if (cache.min1Moves.size() > 0) {
+			std::uniform_int_distribution<int> dist(0, (int)cache.min1Moves.size() - 1);
+			mon.move1 = cache.min1Moves[dist(Random::Generator)];
+		}
+	}
 }
 
 void PokemonGenerator::GenItem(DefPokemon & mon)
 {
+	RefreshItems(mon.species);
 
-	union {
-		struct {
-			GameInfo::ItemId speciesItem;
-			GameInfo::ItemId typeItem1;
-			GameInfo::ItemId typeItem2;
-		};
-		GameInfo::ItemId items[3];
-	} extraItems;
-	extraItems.speciesItem = GameInfo::SpeciesBattleItemMap[mon.species];
-	extraItems.typeItem1 = GameInfo::TypeBattleItemMap[GameInfo::Pokemons[mon.species - 1].type1];
-	extraItems.typeItem2 = GameInfo::TypeBattleItemMap[GameInfo::Pokemons[mon.species - 1].type2];
-	
-	int includeItemsIgnore = 0; //bitfield, bit 1 ,2 ,3 for species, type1, type2
-	if (extraItems.speciesItem == GameInfo::NO_ITEM) includeItemsIgnore |= 1;
-	if (extraItems.typeItem1 == GameInfo::NO_ITEM) includeItemsIgnore |= 2;
-	if (extraItems.typeItem2 == GameInfo::NO_ITEM) includeItemsIgnore |= 4;
-	if (extraItems.typeItem1 == extraItems.typeItem2) includeItemsIgnore |= 4; //in case of mono type pokemon
-
-	unsigned int legalItemsN = 0;
-	static GameInfo::ItemId legalItems[256];
-	const GameInfo::ItemId* itemList;
-	unsigned int itemListN;
-
-	FilterBufferGenerateOrDefault(&itemList, &itemListN,
-						legalItems, legalItemsN,
-						GameInfo::ExistingItemMap, _countof(GameInfo::ExistingItemMap),
-						itemFilterBuffer, itemFilterBufferN,
-						&[&](GameInfo::ItemId iId) {
-		if (extraItems.speciesItem == iId) includeItemsIgnore |= 1;
-		if (extraItems.typeItem1 == iId) includeItemsIgnore |= 2;
-		if (extraItems.typeItem2 == iId) includeItemsIgnore |= 4;
-		if (itemFilter) return itemFilter(iId, mon.species); 
-		return false;
-	});
-
-
-	if (includeTypeSpeciesSpecific) {
-		//try drawing type or species specific item
-		unsigned int addN = 3 - 
-			((includeItemsIgnore & 1) + ((includeItemsIgnore & 2) >> 1) + ((includeItemsIgnore & 4) >> 2));
-		if (addN > 0) {
-			std::uniform_int_distribution<int> dist(0, (int)itemListN - 1 + addN);
-			int rand = dist(Random::Generator);
-			if (rand > (int)itemListN - 1) {
-				unsigned int useAddN = rand - (int)itemListN - 1;
-				for (int i = 0; i < 3; i++) {
-					if (((1 << i) & includeItemsIgnore) && useAddN-- == 0) {
-						mon.item = extraItems.items[i];
-						return;
-					}
-				}
-			}
-		}
-		
-	}
-	
-	std::uniform_int_distribution<int> dist(0, (int)itemListN - 1);
-	mon.item = itemList[dist(Random::Generator)];
-	return;
-	
-
-	/*
-	if (itemFilter) {
-		for (int i = 0; i <= _countof(GameInfo::ExistingItemMap); i++) {
-			if (itemFilter(GameInfo::ExistingItemMap[i], mon.species)) {
-				legalItems[legalItemsN++] = (GameInfo::ItemId)i;
-			}
-		}
-		if (legalItemsN > 0) {
-			std::uniform_int_distribution<int> dist(0, (int)legalItemsN-1);
-			mon.item = (GameInfo::ItemId)dist(Random::Generator);
-			return;
-		}
-		
-	}
-	if (itemFilterBuffer) {
-		std::uniform_int_distribution<int> dist(0, (int)itemFilterBufferN-1);
-		mon.item = itemFilterBuffer[dist(Random::Generator)];
-		return;
-	}
-	{
-		std::uniform_int_distribution<int> dist(0, (int)_countof(GameInfo::ExistingItemMap)-1);
-		mon.item = GameInfo::ExistingItemMap[dist(Random::Generator)];
-		return;
-	}*/
+	std::uniform_int_distribution<int> dist(0, (int)cache.items.size() - 1);
+	mon.item = cache.items[dist(Random::Generator)];
 }

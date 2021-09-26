@@ -93,7 +93,9 @@
 #define IDC_BTNRMPPDIST                 1104
 #define IDC_BTNRMACCDIST                1105
 #define IDC_STATIC_1                    1106
+#define IDC_CBRANDMOVES_BTNDIST         1106
 #define IDC_STATIC_2                    1107
+#define IDC_CB_TRAINER_RANDMOVES_BTNDIST 1107
 #define IDC_STATIC_3                    1108
 #define IDC_STATIC_4                    1109
 #define IDC_STATIC_5                    1110
@@ -113,10 +115,14 @@
 #define IDC_CHECK1                      1118
 #define IDC_PATCHCIC                    1118
 #define IDC_SLIDERMAX                   1119
+#define IDC_CBRANDMOVES_BALANCED        1119
 #define IDC_SLIDER_1                    1120
 #define IDC_SLIDER_2                    1121
+#define IDC_RD_TRAINER_RANDMOVES_FULLRAND 1121
 #define IDC_SLIDER_3                    1122
+#define IDC_RD_TRAINER_RANDMOVES_BALANCED 1122
 #define IDC_SLIDER_4                    1123
+#define IDC_RD_TRAINER_RANDMOVES_STAYCLOSE 1123
 #define IDC_SLIDER_5                    1124
 #define IDC_SPINMIN                     1125
 #define IDC_SPINMAX                     1126
@@ -125,6 +131,11 @@
 #define IDC_SPIN_3                      1129
 #define IDC_SPIN_4                      1130
 #define IDC_SPIN_5                      1131
+#define IDC_DIST_EDGECLAMP              1132
+#define IDC_DIST_EDGEREROLL             1133
+#define IDC_BUTTON1                     1133
+#define IDC_BTNLOADPRESET               1133
+#define IDC_BTNSAVEPRESET               1134
 
 // Next default values for new objects
 // 
@@ -132,7 +143,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        105
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1119
+#define _APS_NEXT_CONTROL_VALUE         1135
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

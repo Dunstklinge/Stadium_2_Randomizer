@@ -30,7 +30,6 @@ public:
 	DiscreteDistribution ecDist;
 	bool randomStatusMoveEffect;
 
-	double RateMove(const GameInfo::Move& move);
 private:
 
 	struct AuxMaps {

@@ -18,9 +18,9 @@
 #include "DefFaces.h"
 
 
-Randomizer::Randomizer(CMainDialog* settings)
+Randomizer::Randomizer(const RandomizationParams& settings)
 {
-	m_settings = settings;
+	m_settings = &settings;
 	m_romRoster = nullptr;
 	m_romText = nullptr;
 }
@@ -45,163 +45,27 @@ Randomizer::~Randomizer()
 	delete[] m_customStringsInitInjectCode, m_customStringsInitInjectCode = nullptr;
 }
 
-void Randomizer::Randomize(const CString& path, CMainDialog * settings)
+void Randomizer::Randomize(const CString& path, const RandomizationParams& settings, CWnd* owner)
 {
 	Randomizer r(settings);
-	r.RandomizeRom(path);
+	r.RandomizeRom(path, owner);
 }
 
 
 
 
-void Randomizer::RandomizeRom(const CString & path)
+void Randomizer::RandomizeRom(const CString & path, CWnd* owner)
 {
-	//setup general data
-	m_genLog.open("gen\\genLog.txt");						//logger
+	m_owner = owner;
+	m_romPath = path;
+	DoSetup();
 
-	CString strSeed;
-	m_settings->edSeed.GetWindowText(strSeed);
-	m_genLog << "Generating with seed " << strSeed << "\n";
+	AnalyseRom();
 
-	m_in.open(path, std::ifstream::binary);				//input file
-
-	m_settings->progressBar.GetRange(m_progressBarMin, m_progressBarMax);
-
-	AnalyseRom();										//rom type					
-
-	m_cupRules = GenerateCupRules();					//cup rules
-
-	char dwordContainingRegion[4];
-	m_in.seekg(0x3C);
-	m_in.read(dwordContainingRegion, 4);
-	DoSwaps(dwordContainingRegion, 4);
-	m_romRegion = (dwordContainingRegion)[2];			//region (Us, Europe)
-
-
-	//setup parts to be written
-	m_romRoster = DefRoster::FromFileStream(m_in);
-	DoSwaps(m_romRoster, DefRoster::segSize);
-	m_romRoster->Curate(true);
-	m_romText = DefText::FromFileStream(m_in);
-	DoSwaps(m_romText, DefText::segSize);
-	m_romText->Curate(true);
-	m_customRInfoTable.clear();
-	m_customRentalTables.clear();
-	m_customIInfoTable.clear();
-	m_customItemTables.clear();
-	m_customFaceTable.clear();
-	m_customTrainers.clear();
-
-	//
-	// randomize data
-	//
-
-	if (m_settings->uberSpeciesBst || m_settings->uberSpeciesTypes) {
-		RandomizeSpecies();
-	}
-	if (m_settings->uberMoves) {
-		RandomizeMoves();
-	}
-
-	if (m_settings->randRentals) {
-		m_progressPartMinPercent = 0.0;
-		m_progressPartMaxPercent = 0.1;
-		RandomizeRegularRentals();
-
+	RandomizeData();
 	
-		m_progressPartMinPercent = 0.1;
-		m_progressPartMaxPercent = 0.5;
-		RandomizeHackedRentals();
-	}
-
-	m_progressPartMinPercent = 0.5;
-	m_progressPartMaxPercent = 0.9;
-	RandomizeTrainers();
-
-	m_progressPartMinPercent = 0.9;
-	m_progressPartMaxPercent = 0.9;
-	RandomizeItems();
-
-	m_progressPartMinPercent = 0.9;
-	m_progressPartMaxPercent = 1.0;
-	SortInjectedData();
-
-	//
-	// save generated data
-	//
+	SaveRom();
 	
-
-	const TCHAR filters[] = _T("n64 rom files|*.n64;*.z64;*.v64||");
-	CFileDialog dlg(FALSE, _T("csv"), NULL, OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT, filters, m_settings);
-	int choice = dlg.DoModal();
-
-	m_in.close();
-	if (choice == IDOK) {
-		BOOL suc = FALSE;
-		if (path == dlg.GetPathName()) {
-			//overwrite original
-			suc = TRUE;
-		}
-		else {
-			suc = CopyFileA(path, dlg.GetPathName(), FALSE);
-		}
-
-		if (suc) {
-			std::ofstream out(dlg.GetPathName(),std::ofstream::in | std::ofstream::out | std::ofstream::binary);
-			for (auto& rep : m_romReplacements) {
-				out.seekp(rep.romOffset);
-				out.write((char*)rep.buffer, rep.bufferSize);
-			}
-			out.close();
-
-			bool touchedCrcArea = false;
-			for (auto& rep : m_romReplacements) {
-				if (rep.romOffset < CHECKSUM_END) {
-					touchedCrcArea = true;
-					break;
-				}
-			}
-			if (touchedCrcArea) {
-				uint8_t* checksumPartBuffer = new uint8_t[CHECKSUM_END];
-				m_in.open(dlg.GetPathName(), std::ifstream::binary);
-				m_in.seekg(0);
-				m_in.read((char*)checksumPartBuffer, CHECKSUM_END);
-				DoSwaps(checksumPartBuffer, CHECKSUM_END);
-
-				if (m_settings->patchCic) {
-					//instead of recalculation CRCs, patch the bootcode
-					//stadium 2 has CIC version 6103 - we nop at address 0x63C and 0x648
-					*((uint32_t*)(checksumPartBuffer + 0x63c)) = 0;
-					*((uint32_t*)(checksumPartBuffer + 0x648)) = 0;
-				}
-				else {
-					//recalculate CRCs and replace them
-					uint32_t newCrcs[2];
-					bool crcSuc = CalculateCrcs(newCrcs, checksumPartBuffer);
-					if (crcSuc) {
-						SwitchEndianness(newCrcs[0]);
-						SwitchEndianness(newCrcs[1]);
-						//crcs are at 0x10 and 0x14
-						*((uint32_t*)(checksumPartBuffer + 0x10)) = newCrcs[0];
-						*((uint32_t*)(checksumPartBuffer + 0x14)) = newCrcs[1];
-					}
-				}
-				
-				
-
-				DoSwaps(checksumPartBuffer, CHECKSUM_END);
-
-				m_in.close();
-				out.open(dlg.GetPathName(), std::ofstream::in | std::ofstream::out | std::ofstream::binary);
-				out.seekp(0);
-				out.write((char*)checksumPartBuffer, CHECKSUM_END);
-				out.close();
-
-				delete[] checksumPartBuffer;
-			}
-		}
-	}
-
 	delete[]((uint8_t*)m_romText), m_romText = nullptr;
 	delete[]((uint8_t*)m_romRoster), m_romRoster = nullptr;
 
@@ -210,7 +74,8 @@ void Randomizer::RandomizeRom(const CString & path)
 
 void Randomizer::SetProgress(double percent)
 {
-	m_settings->progressBar.SetPos((int)((m_progressBarMax - m_progressBarMin) * percent + m_progressBarMin));
+	//m_settings->progressBar.SetPos((int)((m_progressBarMax - m_progressBarMin) * percent + m_progressBarMin));
+	//TODO
 }
 
 void Randomizer::SetPartialProgress(double percent)
@@ -300,8 +165,25 @@ void Randomizer::CustomStringData::Curate(bool forth)
 	}
 }
 
-bool Randomizer::AnalyseRom()
-{
+void Randomizer::DoSetup() {
+	//setup general data
+	m_genLog.open("gen\\genLog.txt");						//logger
+
+	m_genLog << "Generating with seed " << m_settings->seed << "\n";
+
+	m_in.open(m_romPath, std::ifstream::binary);				//input file
+
+	m_customRInfoTable.clear();
+	m_customRentalTables.clear();
+	m_customIInfoTable.clear();
+	m_customItemTables.clear();
+	m_customFaceTable.clear();
+	m_customTrainers.clear();
+
+	Random::Generator.seed(m_settings->seed);
+}
+
+void Randomizer::AnalyseRom() {
 	//there seem to be 3 formats: normal, byteswapped (read in as 16 bit little endian) and wordswapped
 	//(confusingly just called little endian, which makes 0 sense because the rom has no idea about the semantics
 	// of values)
@@ -313,23 +195,140 @@ bool Randomizer::AnalyseRom()
 	m_in.read((char*)&firstByte, 1);
 
 	m_normal = firstByte == 0x80, m_byteswapped = firstByte == 0x37, m_wordswapped = firstByte == 0x40;
-	auto DoSwaps = [&](void* buffer, size_t size) {
-		uint8_t* bBuffer = (uint8_t*)buffer;
-		if (m_normal) return false;
-		else if (m_byteswapped) for (size_t i = 0; i < size; i += 2) SwitchEndianness(*(uint16_t*)(bBuffer + i));
-		else if (m_wordswapped) for (size_t i = 0; i < size; i += 4) SwitchEndianness(*(uint32_t*)(bBuffer + i));
-	};
-	return true;
+
+	char dwordContainingRegion[4];
+	m_in.seekg(0x3C);
+	m_in.read(dwordContainingRegion, 4);
+	DoSwaps(dwordContainingRegion, 4);
+	m_romRegion = (dwordContainingRegion)[2];			//region (Us, Europe)
+
+	//setup parts to be written
+	m_romRoster = DefRoster::FromFileStream(m_in);
+	DoSwaps(m_romRoster, DefRoster::segSize);
+	m_romRoster->Curate(true);
+	m_romText = DefText::FromFileStream(m_in);
+	DoSwaps(m_romText, DefText::segSize);
+	m_romText->Curate(true);
 }
 
+void Randomizer::RandomizeData() {
+	m_cupRules = GenerateCupRules();					//cup rules
+	if (m_settings->uber.species.randomizeBst|| m_settings->uber.species.randomizeTypes) {
+		RandomizeSpecies();
+	}
+	if (m_settings->uber.moves.randomize) {
+		RandomizeMoves();
+	}
+
+	if (m_settings->rentals.randRentals) {
+		m_progressPartMinPercent = 0.0;
+		m_progressPartMaxPercent = 0.1;
+		RandomizeRegularRentals();
+
+
+		m_progressPartMinPercent = 0.1;
+		m_progressPartMaxPercent = 0.5;
+		RandomizeHackedRentals();
+	}
+
+	m_progressPartMinPercent = 0.5;
+	m_progressPartMaxPercent = 0.9;
+	RandomizeTrainers();
+
+	m_progressPartMinPercent = 0.9;
+	m_progressPartMaxPercent = 0.9;
+	RandomizeItems();
+
+	m_progressPartMinPercent = 0.9;
+	m_progressPartMaxPercent = 1.0;
+	SortInjectedData();
+}
+
+void Randomizer::SaveRom() {
+	const TCHAR filters[] = _T("n64 rom files|*.n64;*.z64;*.v64||");
+	CFileDialog dlg (FALSE, _T("csv"), NULL, OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT, filters, m_owner);
+	int choice = dlg.DoModal();
+
+	m_in.close();
+	if (choice == IDOK) {
+		BOOL suc = FALSE;
+		if (m_romPath == dlg.GetPathName()) {
+			//overwrite original
+			suc = TRUE;
+		}
+		else {
+			suc = CopyFileA(m_romPath, dlg.GetPathName(), FALSE);
+		}
+
+		if (suc) {
+			std::ofstream out(dlg.GetPathName(), std::ofstream::in | std::ofstream::out | std::ofstream::binary);
+			for (auto& rep : m_romReplacements) {
+				out.seekp(rep.romOffset);
+				out.write((char*)rep.buffer, rep.bufferSize);
+			}
+			out.close();
+
+			bool touchedCrcArea = false;
+			for (auto& rep : m_romReplacements) {
+				if (rep.romOffset < CHECKSUM_END) {
+					touchedCrcArea = true;
+					break;
+				}
+			}
+			if (touchedCrcArea) {
+				uint8_t* checksumPartBuffer = new uint8_t[CHECKSUM_END];
+				m_in.open(dlg.GetPathName(), std::ifstream::binary);
+				m_in.seekg(0);
+				m_in.read((char*)checksumPartBuffer, CHECKSUM_END);
+				DoSwaps(checksumPartBuffer, CHECKSUM_END);
+
+				if (m_settings->patchCic) {
+					//instead of recalculation CRCs, patch the bootcode
+					//stadium 2 has CIC version 6103 - we nop at address 0x63C and 0x648
+					*((uint32_t*)(checksumPartBuffer + 0x63c)) = 0;
+					*((uint32_t*)(checksumPartBuffer + 0x648)) = 0;
+				}
+				else {
+					//recalculate CRCs and replace them
+					uint32_t newCrcs[2];
+					bool crcSuc = CalculateCrcs(newCrcs, checksumPartBuffer);
+					if (crcSuc) {
+						SwitchEndianness(newCrcs[0]);
+						SwitchEndianness(newCrcs[1]);
+						//crcs are at 0x10 and 0x14
+						*((uint32_t*)(checksumPartBuffer + 0x10)) = newCrcs[0];
+						*((uint32_t*)(checksumPartBuffer + 0x14)) = newCrcs[1];
+					}
+				}
+
+
+
+				DoSwaps(checksumPartBuffer, CHECKSUM_END);
+
+				m_in.close();
+				out.open(dlg.GetPathName(), std::ofstream::in | std::ofstream::out | std::ofstream::binary);
+				out.seekp(0);
+				out.write((char*)checksumPartBuffer, CHECKSUM_END);
+				out.close();
+
+				delete[] checksumPartBuffer;
+			}
+		}
+	}
+}
+
+
+/*
+	Should probably be read from the ROM, but they are constant, so ill generate them as a constant for now
+*/
 Randomizer::CupRules Randomizer::GenerateCupRules()
 {
-	int primecupLevel = _tstoi(m_settings->strPrimeCupLevel);
-	int glcLevel = m_settings->changeGlcRentalLevel ? _tstoi(m_settings->seperateGlcRentalsLevel) : 100;
+	int primecupLevel = m_settings->rentals.strPrimeCupLevel;
+	int glcLevel = m_settings->rentals.changeGlcRentalLevel ? m_settings->rentals.seperateGlcRentalsLevel : 100;
 	return CupRules {
 		CupRule{50, 55, 155, nullptr, PokecupLegalMons, _countof(PokecupLegalMons)},
 		CupRule{5, 5, 999, &FilterOutLittlecupMoves, LittlecupLegalMons, _countof(LittlecupLegalMons)},
-		CupRule{m_settings->randPrimecupLevels ? primecupLevel : 100, 100, 999},  //poke, little, prime/gym
+		CupRule{m_settings->rentals.randPrimecupLevels ? primecupLevel : 100, 100, 999},  //poke, little, prime/gym
 
 		CupRule{30,30,999, nullptr, ChallengecupLegalMonsPokeball, _countof(ChallengecupLegalMonsPokeball)}, //challenge cup 1,2,3,4
 		CupRule{45,45,999, nullptr, ChallengecupLegalMonsGreatball, _countof(ChallengecupLegalMonsGreatball)},
@@ -351,26 +350,28 @@ void Randomizer::RandomizeRegularRentals()
 	auto rentalIt = m_romRoster->rentalBegin();
 	PokemonGenerator pokeGen;
 	pokeGen.changeSpecies = false;
-	pokeGen.changeEvsIvs = m_settings->randEvIv;
-	pokeGen.changeLevel = m_settings->randLevels;
-	pokeGen.changeMoves = m_settings->randMoves;
+	pokeGen.changeEvsIvs = m_settings->rentals.randEvIv;
+	pokeGen.changeLevel = m_settings->rentals.randLevels;
+	pokeGen.changeMoves = m_settings->rentals.randMoves;
 	pokeGen.changeItem = false;
 
-	pokeGen.randEvs = m_settings->randEvIv;
-	pokeGen.randIvs = m_settings->randEvIv;
-	pokeGen.bstEvIvs = m_settings->rentalSpeciesEvIv;
-	pokeGen.statsDist = m_settings->randEvIvDist;
-	pokeGen.levelDist = m_settings->randLevelsDist;
-	pokeGen.changeHappiness = m_settings->randRentalHappiness;
+	pokeGen.randEvs = m_settings->rentals.randEvIv;
+	pokeGen.randIvs = m_settings->rentals.randEvIv;
+	pokeGen.bstEvIvs = m_settings->rentals.rentalSpeciesEvIv;
+	pokeGen.statsDist = m_settings->rentals.randEvIvDist;
+	pokeGen.levelDist = m_settings->rentals.randLevelsDist;
+	pokeGen.changeHappiness = m_settings->rentals.randRentalHappiness;
 
 	{
 		using namespace std::placeholders;
-		if (m_settings->min1Buttons == 1) pokeGen.minOneMoveFilter = std::bind(&FilterMoveByBP, _1, 1, 999);
-		else if (m_settings->min1Buttons == 2) pokeGen.minOneMoveFilter = std::bind(&FilterMoveByBP, _1, 75, 999);
-		else if (m_settings->min1Buttons == 3) pokeGen.minOneMoveFilter = &FilterMoveByStab;
-		else if (m_settings->min1Buttons == 4) pokeGen.minOneMoveFilter =
+		std::function<bool(GameInfo::MoveId, GameInfo::PokemonId)> minMoveFilter;
+		if (m_settings->min1Buttons == 1) minMoveFilter = std::bind(&FilterMoveByBP, _1, 1, 999);
+		else if (m_settings->min1Buttons == 2) minMoveFilter = std::bind(&FilterMoveByBP, _1, 75, 999);
+		else if (m_settings->min1Buttons == 3) minMoveFilter = &FilterMoveByStab;
+		else if (m_settings->min1Buttons == 4) minMoveFilter =
 			std::bind(std::logical_and<bool>(), std::bind(&FilterMoveByBP, _1, 75, 999), std::bind(&FilterMoveByStab, _1, _2));
-		else pokeGen.minOneMoveFilter = nullptr;
+		else minMoveFilter = nullptr;
+		pokeGen.minOneMoveFilter = { minMoveFilter, nullptr, 0 };
 	}
 	auto randomizeRentals = [&](int cupIndex) {
 		for (int i = 0; i < rentalIt[cupIndex].nPokemon; i++) {
@@ -387,26 +388,25 @@ void Randomizer::RandomizeRegularRentals()
 	//little cup
 	pokeGen.minLevel = 5;
 	pokeGen.maxLevel = 5;
-	pokeGen.generalMoveFilter = m_cupRules[LITTLECUP].legalMoveFilter;
+	pokeGen.generalMoveFilter = { m_cupRules[LITTLECUP].legalMoveFilter, nullptr, 0 };
 	if (m_settings->legalMovesOnly) {
 		using namespace std::placeholders;
-		pokeGen.generalMoveFilter = std::bind(std::logical_and<bool>(),
-			std::bind(pokeGen.generalMoveFilter, _1, _2),
+		pokeGen.generalMoveFilter.func = std::bind(std::logical_and<bool>(),
+			std::bind(pokeGen.generalMoveFilter.func, _1, _2),
 			std::bind(FilterLegalMovesOnly, _1, _2));
 	}
-	pokeGen.speciesFilterBuffer = m_cupRules[LITTLECUP].legalMonList;
-	pokeGen.speciesFilterBufferN = m_cupRules[LITTLECUP].legalMonListN;
+	pokeGen.speciesFilter = { nullptr, m_cupRules[LITTLECUP].legalMonList, m_cupRules[LITTLECUP].legalMonListN };
 	randomizeRentals(0);
 
 	SetPartialProgress(0.2);
 
 	m_genLog << "Prime Cup:\n";
 	//prime cup
-	int primecupLevel = _tstoi(m_settings->strPrimeCupLevel);
+	int primecupLevel = m_settings->rentals.strPrimeCupLevel;
 	pokeGen.ClearAllFilters();
 	if (m_settings->legalMovesOnly)
-		pokeGen.generalMoveFilter = FilterLegalMovesOnly;
-	pokeGen.minLevel = m_settings->randPrimecupLevels ? primecupLevel : 100;
+		pokeGen.generalMoveFilter = { FilterLegalMovesOnly, nullptr, 0 };
+	pokeGen.minLevel = m_settings->rentals.randPrimecupLevels ? primecupLevel : 100;
 	pokeGen.maxLevel = 100;
 	randomizeRentals(1);
 
@@ -422,11 +422,10 @@ void Randomizer::RandomizeRegularRentals()
 	m_genLog << "Poke Cup:\n";
 	pokeGen.ClearAllFilters();
 	if (m_settings->legalMovesOnly)
-		pokeGen.generalMoveFilter = FilterLegalMovesOnly;
-	pokeGen.speciesFilterBuffer = m_cupRules[POKECUP].legalMonList;
-	pokeGen.speciesFilterBufferN = m_cupRules[POKECUP].legalMonListN;
+		pokeGen.generalMoveFilter = { FilterLegalMovesOnly, nullptr, 0 };
+	pokeGen.speciesFilter = { nullptr, m_cupRules[POKECUP].legalMonList, m_cupRules[POKECUP].legalMonListN };
 	pokeGen.minLevel = 50;
-	pokeGen.maxLevel = m_settings->randLevels ? 55 : 50;
+	pokeGen.maxLevel = m_settings->rentals.randLevels ? 55 : 50;
 	randomizeRentals(3);
 
 	SetPartialProgress(1);
@@ -442,18 +441,18 @@ void Randomizer::RandomizeSpecies()
 	monDone.resize(_countof(GameInfo::Pokemons));
 
 	SpeciesGenerator speciesGen;
-	speciesGen.randomType = m_settings->uberSpeciesTypes;
-	speciesGen.gainSecondTypeChance = _ttoi(m_settings->uberSpeciesAddTypePercent);
-	speciesGen.looseSecondTypeChance = _ttoi(m_settings->uberSpeciesRemTypePercent);
+	speciesGen.randomType = m_settings->uber.species.randomizeTypes;
+	speciesGen.gainSecondTypeChance = m_settings->uber.species.addTypePercent;
+	speciesGen.looseSecondTypeChance = m_settings->uber.species.removeTypePercent;
 
-	speciesGen.randomStats = m_settings->uberSpeciesBst;
-	speciesGen.bstDist = m_settings->uberSpeciesBstDist;
-	speciesGen.statDist = m_settings->uberSpeciesBstDist;
-	speciesGen.dontDecreaseEvolutionBST = m_settings->uberSpeciesEvoBst;
-	speciesGen.dontDecreaseEvolutionStats = m_settings->uberSpeciesEvoStats;
-	speciesGen.keepBST = m_settings->uberSpeciesBstButtons == 0;
-	speciesGen.stayCloseBST = m_settings->uberSpeciesBstButtons == 1;
-	speciesGen.randomBST = m_settings->uberSpeciesBstButtons == 2;
+	speciesGen.randomStats = m_settings->uber.species.randomizeBst;
+	speciesGen.bstDist = m_settings->uber.species.bstDist;
+	speciesGen.statDist = m_settings->uber.species.bstDist;
+	speciesGen.dontDecreaseEvolutionBST = m_settings->uber.species.evoBst;
+	speciesGen.dontDecreaseEvolutionStats = m_settings->uber.species.evoStats;
+	speciesGen.keepBST = m_settings->uber.species.bstType == RandomizationParams::Uber::Species::KeepBst;
+	speciesGen.stayCloseBST = m_settings->uber.species.bstType == RandomizationParams::Uber::Species::StayCloseToBst;
+	speciesGen.randomBST = m_settings->uber.species.bstType == RandomizationParams::Uber::Species::RandomBst;
 	speciesGen.context = m_customPokemon;
 
 	//c++ lambdas cant do recursive, but i cant be arsed to make a new method right now
@@ -487,21 +486,21 @@ void Randomizer::RandomizeSpecies()
 void Randomizer::RandomizeMoves()
 {
 	MoveGenerator moveGen;
-	moveGen.balanced = m_settings->uberMovesBalance;
-	moveGen.randomType = m_settings->uberMovesType;
-	moveGen.randomAcc = m_settings->uberMovesAcc;
-	moveGen.accDist = m_settings->uberMovesAccDist;
-	moveGen.randomPp = m_settings->uberMovesPp;
-	moveGen.ppDist = m_settings->uberMovesPpDist;
-	moveGen.randomBp = m_settings->uberMovesBp;
-	moveGen.stayCloseToBp = m_settings->uberMovesCloseBp;
-	moveGen.bpDist = m_settings->uberMovesBpDist;
-	moveGen.randomSecondary = m_settings->uberMovesSecEffect;
-	moveGen.gainSecondaryEffectChance = _ttoi(m_settings->uberMovesSecAddPercent);
-	moveGen.looseSecondaryEffectChance = _ttoi(m_settings->uberMovesSecRemPercent);
-	moveGen.randomEffectChance = m_settings->uberMovesSecEffectChance;
-	moveGen.ecDist = m_settings->uberMovesSecEffectChanceDist;
-	moveGen.randomStatusMoveEffect = m_settings->uberMovesStatusMoves;
+	moveGen.balanced = m_settings->uber.moves.balance;
+	moveGen.randomType = m_settings->uber.moves.type;
+	moveGen.randomAcc = m_settings->uber.moves.acc;
+	moveGen.accDist = m_settings->uber.moves.accDist;
+	moveGen.randomPp = m_settings->uber.moves.pp;
+	moveGen.ppDist = m_settings->uber.moves.ppDist;
+	moveGen.randomBp = m_settings->uber.moves.bp;
+	moveGen.stayCloseToBp = m_settings->uber.moves.closeBp;
+	moveGen.bpDist = m_settings->uber.moves.bpDist;
+	moveGen.randomSecondary = m_settings->uber.moves.secEffect;
+	moveGen.gainSecondaryEffectChance = m_settings->uber.moves.secEffectAddPercent;
+	moveGen.looseSecondaryEffectChance = m_settings->uber.moves.secEffectRemPercent;
+	moveGen.randomEffectChance = m_settings->uber.moves.secEffectChance;
+	moveGen.ecDist = m_settings->uber.moves.secEffectChanceDist;
+	moveGen.randomStatusMoveEffect = m_settings->uber.moves.statusMoves;
 
 	m_customMoves = new GameInfo::Move[_countof(GameInfo::Moves)];
 	memcpy_s(m_customMoves, sizeof(GameInfo::Moves), GameInfo::Moves, sizeof(GameInfo::Moves));
@@ -519,13 +518,13 @@ void Randomizer::RandomizeMoves()
 			<< (int)move.basePower << "bp\t" << (move.basePower <= 9 ? "\t" : "") << (int)move.pp << "/" << (int)move.pp << "pp\t"
 			<< (int)move.accuracy << "/255acc\t" << GameInfo::TypeNames[move.type] << "\t"
 			<< (int)move.effectId << "[" << GameInfo::MoveEffectInfos[move.effectId].name << "]" << "\t(" << (int)move.effectChance << "/255 chance)"
-			<< "\t rated " << moveGen.RateMove(move) << "\n";
+			<< "\t rated " << RateMove(move) << "\n";
 	}
 }
 
 void Randomizer::RandomizeHackedRentals()
 {
-	if (!m_settings->moreRentalTables) return;
+	if (!m_settings->rentals.moreRentalTables) return;
 
 	PokemonGenerator pokeGen;
 	pokeGen.changeSpecies = false;
@@ -534,25 +533,27 @@ void Randomizer::RandomizeHackedRentals()
 	pokeGen.changeMoves = true;
 	pokeGen.changeItem = false;
 
-	pokeGen.randEvs = m_settings->randEvIv;
-	pokeGen.randIvs = m_settings->randEvIv;
-	pokeGen.bstEvIvs = m_settings->rentalSpeciesEvIv;
-	pokeGen.statsDist = m_settings->randEvIvDist;
-	pokeGen.levelDist = m_settings->randLevelsDist;
-	pokeGen.changeHappiness = m_settings->randRentalHappiness;
+	pokeGen.randEvs = m_settings->rentals.randEvIv;
+	pokeGen.randIvs = m_settings->rentals.randEvIv;
+	pokeGen.bstEvIvs = m_settings->rentals.rentalSpeciesEvIv;
+	pokeGen.statsDist = m_settings->rentals.randEvIvDist;
+	pokeGen.levelDist = m_settings->rentals.randLevelsDist;
+	pokeGen.changeHappiness = m_settings->rentals.randRentalHappiness;
 
 	{
 		using namespace std::placeholders;
-		if (m_settings->min1Buttons == 1) pokeGen.minOneMoveFilter = std::bind(&FilterMoveByBP, _1, 1, 999);
-		else if (m_settings->min1Buttons == 2) pokeGen.minOneMoveFilter = std::bind(&FilterMoveByBP, _1, 75, 999);
-		else if (m_settings->min1Buttons == 3) pokeGen.minOneMoveFilter = &FilterMoveByStab;
-		else if (m_settings->min1Buttons == 4) pokeGen.minOneMoveFilter =
+		std::function<bool(GameInfo::MoveId, GameInfo::PokemonId)> minMoveFilter;
+		if (m_settings->min1Buttons == 1) minMoveFilter = std::bind(&FilterMoveByBP, _1, 1, 999);
+		else if (m_settings->min1Buttons == 2) minMoveFilter = std::bind(&FilterMoveByBP, _1, 75, 999);
+		else if (m_settings->min1Buttons == 3) minMoveFilter = &FilterMoveByStab;
+		else if (m_settings->min1Buttons == 4) minMoveFilter =
 			std::bind(std::logical_and<bool>(), std::bind(&FilterMoveByBP, _1, 75, 999), std::bind(&FilterMoveByStab, _1, _2));
-		else pokeGen.minOneMoveFilter = nullptr;
+		else minMoveFilter = nullptr;
+		pokeGen.minOneMoveFilter = { minMoveFilter, nullptr, 0 };
 	}
 
-	if (m_settings->legalMovesOnly) 
-		pokeGen.generalMoveFilter = FilterLegalMovesOnly;	
+	if (m_settings->legalMovesOnly)
+		pokeGen.generalMoveFilter = { FilterLegalMovesOnly, nullptr, 0 };
 
 	const auto tid = [](int id) {return id + 5; };
 	const auto AddRentalSet = [&](int tidBorder, int rentalIndex) {
@@ -600,7 +601,7 @@ void Randomizer::RandomizeHackedRentals()
 	//0 and 1 are unknown and never covered anyway
 	AddRentalSet(0,-1);
 
-	if (m_settings->multiplePokecupRentals) {
+	if (m_settings->rentals.multiplePokecupRentals) {
 		//2 allready has its default rental table, so we make 3,4,5
 		AddRentalSet(tid(3), GenRentalSetAndAdd(POKECUP));
 		AddRentalSet(tid(4), GenRentalSetAndAdd(POKECUP));
@@ -608,15 +609,15 @@ void Randomizer::RandomizeHackedRentals()
 		AddRentalSet(tid(6),-1); //end it
 	}
 	SetPartialProgress(0.2);
-	if (m_settings->multipleGlcRentals) {
+	if (m_settings->rentals.multipleGlcRentals) {
 		AddRentalSet(tid(8), GenRentalSetAndAdd(GLC)); //start at falkner
 		AddRentalSet(tid(13), GenRentalSetAndAdd(GLC));//new rentals from jasmine
 		AddRentalSet(tid(19), GenRentalSetAndAdd(GLC));//new rentals after elite 4
 		AddRentalSet(tid(29),-1); //end it after rival
 	}
 	SetPartialProgress(0.4);
-	if (m_settings->multipleR2Rentals) {
-		if (m_settings->multiplePokecupRentals) {
+	if (m_settings->rentals.multipleR2Rentals) {
+		if (m_settings->rentals.multiplePokecupRentals) {
 			//pokecups, this time all 4
 			AddRentalSet(tid(29), GenRentalSetAndAdd(POKECUP));
 			AddRentalSet(tid(30), GenRentalSetAndAdd(POKECUP));
@@ -634,7 +635,7 @@ void Randomizer::RandomizeHackedRentals()
 		AddRentalSet(tid(34), -1); //end it
 		SetPartialProgress(0.7);
 
-		if (m_settings->multipleGlcRentals) {
+		if (m_settings->rentals.multipleGlcRentals) {
 			AddRentalSet(tid(35), GenRentalSetAndAdd(GLC)); //start at falkner
 			AddRentalSet(tid(40), GenRentalSetAndAdd(GLC));//new rentals from jasmine
 			AddRentalSet(tid(46), GenRentalSetAndAdd(GLC));//new rentals after elite 4
@@ -712,19 +713,19 @@ void Randomizer::RandomizeTrainers()
 
 				//
 				//shuffle data
-				if (m_settings->shuffleRegulars || m_settings->shuffleBosses) {
-					if (!bIsBoss && m_settings->shuffleRegulars || bIsBoss && m_settings->shuffleBosses && m_settings->shuffleCross) {
+				if (m_settings->trainers.shuffleRegulars || m_settings->trainers.shuffleBosses) {
+					if (!bIsBoss && m_settings->trainers.shuffleRegulars || bIsBoss && m_settings->trainers.shuffleBosses && m_settings->trainers.shuffleCross) {
 						shuffleTrainers[round].push_back(trainerList.size() - 1);
 					}
-					else if (bIsBoss && m_settings->shuffleBosses) {
+					else if (bIsBoss && m_settings->trainers.shuffleBosses) {
 						shuffleBosses[round].push_back(trainerList.size() - 1);
 					}
 				}
 				
 				//
 				//custom replacement data
-				if (m_settings->mixCustomsInBosses || m_settings->mixCustomsInTrainers) {
-					if (m_settings->mixCustomsInBosses && bIsBoss || m_settings->mixCustomsInTrainers && !bIsBoss) {
+				if (m_settings->trainers.mixCustomsInBosses || m_settings->trainers.mixCustomsInTrainers) {
+					if (m_settings->trainers.mixCustomsInBosses && bIsBoss || m_settings->trainers.mixCustomsInTrainers && !bIsBoss) {
 						shuffleInCustoms[round].push_back(trainerList.size() - 1);
 					}
 				}
@@ -781,30 +782,32 @@ void Randomizer::RandomizeTrainers()
 	TrainerGenerator tgen;
 	{
 		using namespace std::placeholders;
-		if (m_settings->min1Buttons == 1) tgen.gen.minOneMoveFilter = std::bind(&FilterMoveByBP, _1, 1, 999);
-		else if (m_settings->min1Buttons == 2) tgen.gen.minOneMoveFilter = std::bind(&FilterMoveByBP, _1, 75, 999);
-		else if (m_settings->min1Buttons == 3) tgen.gen.minOneMoveFilter = &FilterMoveByStab;
-		else if (m_settings->min1Buttons == 4) tgen.gen.minOneMoveFilter =
+		std::function<bool(GameInfo::MoveId, GameInfo::PokemonId)> minMoveFilter;
+		if (m_settings->min1Buttons == 1) minMoveFilter = std::bind(&FilterMoveByBP, _1, 1, 999);
+		else if (m_settings->min1Buttons == 2) minMoveFilter = std::bind(&FilterMoveByBP, _1, 75, 999);
+		else if (m_settings->min1Buttons == 3) minMoveFilter = &FilterMoveByStab;
+		else if (m_settings->min1Buttons == 4) minMoveFilter =
 			std::bind(std::logical_and<bool>(), std::bind(&FilterMoveByBP, _1, 75, 999), std::bind(&FilterMoveByStab, _1, _2));
-		else if (m_settings->trainerMin1Atk) tgen.gen.minOneMoveFilter = std::bind(&FilterMoveByBP, _1, 1, 999);
-		else tgen.gen.minOneMoveFilter = nullptr;
+		else if (m_settings->trainerMons.trainerMin1Atk) minMoveFilter = std::bind(&FilterMoveByBP, _1, 1, 999);
+		else minMoveFilter = nullptr;
+		tgen.gen.minOneMoveFilter = { minMoveFilter, nullptr, 0 };
 	}
 	auto oldOneMoveFilter = tgen.gen.minOneMoveFilter;
-	tgen.changePokes = m_settings->trainerRandPoke;
-	tgen.usefulItem = m_settings->battleItems;
-	tgen.gen.changeLevel = m_settings->trainerRandLevels;
-	tgen.gen.changeSpecies = m_settings->trainerRandSpecies;
-	tgen.gen.changeMoves = m_settings->trainerRandMoves;
-	tgen.changeName = m_settings->trainerRandName;
-	tgen.changePokemonNicknames = m_settings->trainerRandMonNames;
-	tgen.gen.changeEvsIvs = m_settings->trainerRandEvIv;
-	tgen.gen.randEvs = m_settings->trainerRandEvIv;
-	tgen.gen.randIvs = m_settings->trainerRandEvIv;
-	tgen.gen.statsDist = m_settings->trainerRandIvEvDist;
-	tgen.gen.changeHappiness = m_settings->trainerRandHappiness;
-	tgen.gen.changeItem = m_settings->trainerRandItems;
-	tgen.gen.levelDist = m_settings->randLevelsDist;
-	tgen.stayCloseToBST = m_settings->stayCloseToBST;
+	tgen.changePokes = m_settings->trainerMons.trainerRandPoke;
+	tgen.usefulItem = m_settings->trainerMons.battleItemsOnly;
+	tgen.gen.changeLevel = m_settings->trainerMons.randLevels;
+	tgen.gen.changeSpecies = m_settings->trainerMons.randSpecies;
+	tgen.gen.changeMoves = m_settings->trainerMons.trainerRandMoves;
+	tgen.changeName = m_settings->trainers.randName;
+	tgen.changePokemonNicknames = m_settings->trainerMons.randMonNames;
+	tgen.gen.changeEvsIvs = m_settings->trainerMons.trainerRandEvIv;
+	tgen.gen.randEvs = m_settings->trainerMons.trainerRandEvIv;
+	tgen.gen.randIvs = m_settings->trainerMons.trainerRandEvIv;
+	tgen.gen.statsDist = m_settings->trainerMons.trainerRandIvEvDist;
+	tgen.gen.changeHappiness = m_settings->trainerMons.trainerRandHappiness;
+	tgen.gen.changeItem = m_settings->trainerMons.trainerRandItems;
+	tgen.gen.levelDist = m_settings->rentals.randLevelsDist;
+	tgen.stayCloseToBST = m_settings->trainerMons.stayCloseToBST;
 	tgen.stayCloseToBSTThreshold = 30;
 
 
@@ -828,23 +831,24 @@ void Randomizer::RandomizeTrainers()
 				tgen.gen.changeLevel = true; //always adjust level for glc ruleset 
 			}
 			else {
-				tgen.gen.changeLevel = m_settings->trainerRandLevels;
+				tgen.gen.changeLevel = m_settings->trainerMons.randLevels;
 			}
+			std::function<bool(GameInfo::MoveId, GameInfo::PokemonId)> moveMunc;
 			if (m_settings->legalMovesOnly) {
 				if (rules.legalMoveFilter) {
 					using namespace std::placeholders;
-					tgen.gen.generalMoveFilter = std::bind(std::logical_and<bool>(),
+					moveMunc = std::bind(std::logical_and<bool>(),
 						std::bind(FilterLegalMovesOnly, _1, _2),
 						std::bind(rules.legalMoveFilter, _1, _2));
 				}
 				else {
-					tgen.gen.generalMoveFilter = FilterLegalMovesOnly;
+					moveMunc = FilterLegalMovesOnly;
 				}
 			}
 			else
-				tgen.gen.generalMoveFilter = rules.legalMoveFilter;
-			tgen.gen.speciesFilterBuffer = rules.legalMonList;
-			tgen.gen.speciesFilterBufferN = rules.legalMonListN;
+				moveMunc = rules.legalMoveFilter;
+			tgen.gen.generalMoveFilter = { moveMunc, nullptr, 0 };
+			tgen.gen.speciesFilter = { nullptr, rules.legalMonList, rules.legalMonListN };
 		}
 
 		bool bIsBoss = trainer.is(TrainerInfo::LAST_OF_CUP) || isBoss(trainer.def);
@@ -855,16 +859,18 @@ void Randomizer::RandomizeTrainers()
 
 		//set trainer specific options
 		if (bIsBoss) {
-			tgen.stayCloseToBST = m_settings->bossStayCloseToBST;
+			std::function<bool(GameInfo::MoveId, GameInfo::PokemonId)> minMoveFilter;
+			tgen.stayCloseToBST = m_settings->trainerMons.bossStayCloseToBST;
 			using namespace std::placeholders;
-			if (tgen.gen.minOneMoveFilter == nullptr) {
-				tgen.gen.minOneMoveFilter = std::bind(FilterMoveByBP, _1, 60, 999);
+			if (minMoveFilter == nullptr) {
+				minMoveFilter = std::bind(FilterMoveByBP, _1, 60, 999);
 			}
 			else {
-				tgen.gen.minOneMoveFilter = std::bind(std::logical_and<bool>(),
-					std::bind(tgen.gen.minOneMoveFilter, _1, _2),
+				minMoveFilter = std::bind(std::logical_and<bool>(),
+					std::bind(minMoveFilter, _1, _2),
 					std::bind(&FilterMoveByBP, _1, 60, 999));
 			}
+			tgen.gen.minOneMoveFilter = { minMoveFilter, nullptr, 0 };
 		}
 
 		DefTrainer newDef = tgen.Generate(trainer.def);
@@ -878,11 +884,11 @@ void Randomizer::RandomizeTrainers()
 
 		//restore trainer specific options
 		if (bIsBoss) {
-			tgen.stayCloseToBST = m_settings->stayCloseToBST;
+			tgen.stayCloseToBST = m_settings->trainerMons.stayCloseToBST;
 			tgen.gen.minOneMoveFilter = oldOneMoveFilter;
 		}
-		if (m_settings->mixCustomsInBosses) {
-			tgen.changeName = m_settings->trainerRandName;
+		if (m_settings->trainers.mixCustomsInBosses) {
+			tgen.changeName = m_settings->trainers.randName;
 		}
 
 		newDef.Print(m_romText, m_genLog);
@@ -897,10 +903,10 @@ void Randomizer::RandomizeTrainers()
 	//
 	// shuffle in custom trainers if reqeusted
 	//
-	int maxCustomTrainers = min(atoi(m_settings->strCustomTrainerN), GlobalConfig::CustomTrainers.customTrainers.size());
+	int maxCustomTrainers = min(m_settings->trainers.strCustomTrainerN, GlobalConfig::CustomTrainers.customTrainers.size());
 	std::vector<int> possibleCustomTrainers;
 	possibleCustomTrainers.reserve(maxCustomTrainers);
-	if (m_settings->mixCustomsInBosses || m_settings->mixCustomsInTrainers) {
+	if (m_settings->trainers.mixCustomsInBosses || m_settings->trainers.mixCustomsInTrainers) {
 		//determine which trainers to shuffle in
 		for (int i = 0; i < maxCustomTrainers; i++) {
 			int customN = GlobalConfig::CustomTrainers.customTrainers.size();
@@ -1055,7 +1061,7 @@ void Randomizer::RandomizeItems()
 {
 	uint8_t* checksumPartBuffer = nullptr;
 
-	if (!m_settings->randChooseItems) return;
+	if (!m_settings->rentals.randChooseItems) return;
 
 	const auto tid = [](int id) {return id + 5; };
 
@@ -1064,7 +1070,7 @@ void Randomizer::RandomizeItems()
 	//make an item array with valid items to avoid repitition
 	GameInfo::ItemId battleItemMapCopy[_countof(GameInfo::BattleItemMap)];
 	unsigned int battleItemMapCopySize;
-	if (m_settings->randIncludeMonspecificItems) {
+	if (m_settings->rentals.randIncludeMonspecificItems) {
 		battleItemMapCopySize = _countof(GameInfo::BattleItemMap);
 		memcpy(battleItemMapCopy, GameInfo::BattleItemMap, sizeof GameInfo::BattleItemMap);
 	}
@@ -1102,14 +1108,14 @@ void Randomizer::RandomizeItems()
 	};
 
 	int nItems = 6;
-	if (m_settings->changeItemN) nItems = _tstoi(m_settings->changeItemNText);
+	if (m_settings->rentals.changeItemN) nItems = m_settings->rentals.changeItemNAmount;
 
 	int defaultRentalItems = GenItemsAndAdd(nItems);	 //default item list
 	AddItemSet(tid(0), defaultRentalItems);
 
-	if (m_settings->itemsPerRentalSet) {
+	if (m_settings->rentals.itemsPerRentalSet) {
 		unsigned int pokeCup = AddItemSet(tid(2), GenItemsAndAdd(nItems));
-		if (m_settings->multiplePokecupRentals) {
+		if (m_settings->rentals.multiplePokecupRentals) {
 			AddItemSet(tid(3), GenItemsAndAdd(nItems));
 			AddItemSet(tid(4), GenItemsAndAdd(nItems));
 			AddItemSet(tid(5), GenItemsAndAdd(nItems));
@@ -1117,13 +1123,13 @@ void Randomizer::RandomizeItems()
 		unsigned int littleCup = AddItemSet(tid(6), GenItemsAndAdd(nItems));
 		unsigned int primeCup = AddItemSet(tid(7), GenItemsAndAdd(nItems));
 		unsigned int glc = AddItemSet(tid(8), GenItemsAndAdd(nItems));
-		if (m_settings->multipleGlcRentals) {
+		if (m_settings->rentals.multipleGlcRentals) {
 			AddItemSet(tid(13), GenItemsAndAdd(nItems));//new rentals from jasmine
 			AddItemSet(tid(19), GenItemsAndAdd(nItems));//new rentals after elite 4
 		}
 		AddItemSet(tid(29), pokeCup);
-		if (m_settings->multipleR2Rentals) {
-			if (m_settings->multiplePokecupRentals) {
+		if (m_settings->rentals.multipleR2Rentals) {
+			if (m_settings->rentals.multiplePokecupRentals) {
 				//pokecups
 				AddItemSet(tid(29), GenItemsAndAdd(nItems));
 				AddItemSet(tid(30), GenItemsAndAdd(nItems));
@@ -1131,16 +1137,16 @@ void Randomizer::RandomizeItems()
 				AddItemSet(tid(32), GenItemsAndAdd(nItems));
 			}
 			AddItemSet(tid(33), littleCup);
-			if (m_settings->multiplePokecupRentals) {
+			if (m_settings->rentals.multiplePokecupRentals) {
 				//littlecup
 				AddItemSet(tid(33), GenItemsAndAdd(nItems));
 			}
 			AddItemSet(tid(34), primeCup);
-			if (m_settings->multiplePokecupRentals) {
+			if (m_settings->rentals.multiplePokecupRentals) {
 				AddItemSet(tid(34), GenItemsAndAdd(nItems));
 			}
 			AddItemSet(tid(35), glc);
-			if (m_settings->multipleGlcRentals) {
+			if (m_settings->rentals.multipleGlcRentals) {
 				AddItemSet(tid(35), GenItemsAndAdd(nItems)); //start at falkner
 				AddItemSet(tid(40), GenItemsAndAdd(nItems));//new rentals from jasmine
 				AddItemSet(tid(46), GenItemsAndAdd(nItems));//new rentals after elite 4

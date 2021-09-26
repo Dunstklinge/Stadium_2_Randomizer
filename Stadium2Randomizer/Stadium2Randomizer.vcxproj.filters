@@ -123,6 +123,12 @@
     <ClCompile Include="MoveEffectValue.cpp">
       <Filter>Configs</Filter>
     </ClCompile>
+    <ClCompile Include="GameContext.cpp">
+      <Filter>GUI</Filter>
+    </ClCompile>
+    <ClCompile Include="RandomizationParams.cpp">
+      <Filter>GUI</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DefPokemon.h">
@@ -226,6 +232,12 @@
     </ClInclude>
     <ClInclude Include="MoveEffectValue.h">
       <Filter>Configs</Filter>
+    </ClInclude>
+    <ClInclude Include="GameContext.h">
+      <Filter>GUI</Filter>
+    </ClInclude>
+    <ClInclude Include="RandomizationParams.h">
+      <Filter>GUI</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

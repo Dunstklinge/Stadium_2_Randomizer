@@ -13,18 +13,16 @@
 #include "MoveTable.h"
 #include "CustomRosterInfo.h"
 #include "CustomTrainerDefs.h"
-
-
-class CMainDialog;
+#include "RandomizationParams.h"
 
 class Randomizer
 {
 public:
-	Randomizer(CMainDialog* settings);
+	Randomizer(const RandomizationParams& settings);
 	~Randomizer();
 
-	static void Randomize(const CString& path, CMainDialog* settings);
-	void RandomizeRom(const CString& path);
+	static void Randomize(const CString& path, const RandomizationParams& settings, CWnd* owner);
+	void RandomizeRom(const CString& path, CWnd* owner);
 
 private:
 
@@ -45,20 +43,29 @@ private:
 	};
 	typedef std::array<CupRule, 8> CupRules;
 
-	CMainDialog* m_settings;
+	const RandomizationParams* m_settings;	// randomization choices made by the user
+	CWnd* m_owner;							// owner of popus, receives progress notifications
 
-	std::ofstream m_genLog;
-	std::ifstream m_in;
+	std::ofstream m_genLog;		// a file which protocols what was randomized and how
+	std::ifstream m_in;			// stream to the ROM file
+	CString m_romPath;			// path to the currently edited rom
 
 	struct RomReplacements {
 		uint8_t* buffer;
 		uint32_t bufferSize;
 		uint32_t romOffset;
 	};
-	std::vector<RomReplacements> m_romReplacements;
+	std::vector<RomReplacements> m_romReplacements;	// Holds a list of byte-wise replacement rules that are generated
+													// over the varying steps. At the end, these rules are what transforms
+													// the regular rom into the randomized one.
 
 	DefRoster* m_romRoster;
 	DefText* m_romText;
+
+	//
+	//generated data
+	//
+
 	std::vector<CustomRosterInfo>				m_customRInfoTable;		//sorted from largest to smallest
 	std::vector<std::vector<uint8_t>>			m_customRentalTables;	//indexed by rentalOffset, which is used as index temporarily
 																		//uint8_t -> DefRoster::PokemonList, i.e 4 bytes, then DefPokemon array
@@ -102,7 +109,13 @@ private:
 	uint32_t m_genFaceTableOffset;
 	uint32_t m_genStringTableOffset;
 
-	bool AnalyseRom();
+	//general functions that make up the randomization functions
+	void DoSetup();			// setus up output file and resets variables
+	void AnalyseRom();		// gather information from rom thats needed for randomization process
+	void RandomizeData();	// create randomized data and generate m_romReplacements out of it
+	void SaveRom();			// create modified file and safe it
+
+	//subfunctions
 	CupRules GenerateCupRules();
 	void RandomizeSpecies();
 	void RandomizeMoves();
@@ -114,7 +127,6 @@ private:
 
 	void AddRival2Pokemon(DefTrainer& trainer);
 
-	int m_progressBarMin, m_progressBarMax;
 	void SetProgress(double percent);
 	double m_progressPartMinPercent, m_progressPartMaxPercent;
 	void SetPartialProgress(double percent);

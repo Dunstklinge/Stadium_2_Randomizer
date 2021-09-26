@@ -5,7 +5,11 @@
 #include "Filters.h"
 #include "GeneratorUtil.h"
 
-TrainerGenerator::TrainerGenerator()
+TrainerGenerator::TrainerGenerator() : TrainerGenerator(DefaultContext)
+{
+}
+
+TrainerGenerator::TrainerGenerator(GameContext context) : context(context), gen(context)
 {
 	gen.changeSpecies = true;
 	gen.changeEvsIvs = true;
@@ -38,16 +42,24 @@ DefTrainer TrainerGenerator::Generate(const DefTrainer & from)
 	gen.maxLevel = maxLevel;
 
 	//set up pokemon gen
-	if (usefulItem) {
-		gen.itemFilter = nullptr;
-		gen.itemFilterBuffer = GameInfo::GeneralBattleItemMap;
-		gen.itemFilterBufferN = _countof(GameInfo::GeneralBattleItemMap);
-		gen.includeTypeSpeciesSpecific = true;
+	if (usefulItem) {		
+		gen.itemFilter = {
+			[&](GameInfo::ItemId iid, GameInfo::PokemonId pid) {
+				auto itemInfo = context.itemList[iid];
+				if (itemInfo.category & GameInfo::Item::SpeciesItem) {
+					return itemInfo.enhancedSpecies == pid;
+				}
+				if (itemInfo.category & GameInfo::Item::TypeItem) {
+					return itemInfo.enhancedType == context.pokeList[pid].type1
+						|| itemInfo.enhancedType == context.pokeList[pid].type2;
+				}
+			},
+			GameInfo::BattleItemMap,
+			_countof(GameInfo::BattleItemMap)
+		};
 	}
 	else {
-		gen.itemFilter = nullptr;
-		gen.itemFilterBuffer = nullptr;
-		gen.includeTypeSpeciesSpecific = false;
+		gen.itemFilter = {nullptr, nullptr, 0};
 	}
 
 
@@ -72,60 +84,34 @@ DefTrainer TrainerGenerator::Generate(const DefTrainer & from)
 		}
 	}
 	
-	//generate pokemon.
-	
+	//generate pokemon.	
 	if (changePokes) {
 		for (int i = 0; i < ret.nPokes; i++) {
 			DefPokemon newPoke;
 
 			//to prevent doubles, we generate a viable pokemon array manually from both their buffer and our filter
 			//and ignore previous pokemon
-			SatUAr oldBst = GameInfo::Pokemons[ret.pokemon[i].species - 1].CalcBST();
+			SatUAr oldBst = GameInfo::Pokemons[ret.pokemon[i].species - 1].CalcBST(); //Note: itentionally take the ORIGINAL pokemon info here
 			unsigned int minBst = oldBst - stayCloseToBSTThreshold;
 			unsigned int maxBst = oldBst + stayCloseToBSTThreshold;
-			GameInfo::PokemonId validSpecies[256];
-			unsigned int validSpeciesN = 0;
+			
+			auto oldFilterFunc = gen.speciesFilter.func;
 
-
-			const GameInfo::PokemonId* filterList;
-			unsigned int filterListN;
-			if (gen.speciesFilterBuffer) {
-				filterList = gen.speciesFilterBuffer;
-				filterListN = gen.speciesFilterBufferN;
-			}
-			else {
-				filterList = GameInfo::PokemonIds;
-				filterListN = _countof(GameInfo::PokemonIds);
-			}
-
-			for (unsigned int j = 0; j < filterListN; j++) {
-				if (!stayCloseToBST || FilterPokemonByBST(filterList[j], minBst, maxBst)) {
-					bool used = false;
-					for (int k = 0; k < i; k++) used |= ret.pokemon[k].species == filterList[j];
-					if (!used) {
-						validSpecies[validSpeciesN++] = filterList[j];
+			gen.speciesFilter.func = [&](GameInfo::PokemonId pid) {
+				if (!oldFilterFunc(pid)) return false;
+				if (stayCloseToBST && !FilterPokemonByBST(pid, minBst, maxBst)) return false;
+				for (int k = 0; k < i; k++) {
+					if (ret.pokemon[k].species == pid) {
+						return false;
 					}
 				}
-			}
-
-			auto* oldBuffer = gen.speciesFilterBuffer;
-			auto oldBufferN = gen.speciesFilterBufferN;
-
-			if (validSpeciesN > 0) {
-				gen.speciesFilterBuffer = validSpecies;
-				gen.speciesFilterBufferN = validSpeciesN;
-			}
-
-			auto oldOneMoveFilter = gen.minOneMoveFilter;
-
+				return true;
+			};
 
 			newPoke = gen.Generate(ret.pokemon[i]);
 			ret.pokemon[i] = newPoke;
 
-			gen.minOneMoveFilter = oldOneMoveFilter;
-
-			gen.speciesFilterBuffer = oldBuffer;
-			gen.speciesFilterBufferN = oldBufferN;
+			gen.speciesFilter.func = oldFilterFunc;
 
 
 

@@ -28,3 +28,4 @@ public:
 	std::map<GameInfo::MoveEffect, Value> data;
 };
 
+double RateMove(const GameInfo::Move& move);

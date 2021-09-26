@@ -1,5 +1,6 @@
 #pragma once
 
+#include "GameContext.h"
 #include "DefTrainer.h"
 #include "TextMods.h"
 #include "PokemonGenerator.h"
@@ -8,6 +9,7 @@ class TrainerGenerator
 {
 public:
 	TrainerGenerator();
+	TrainerGenerator(GameContext context);
 	~TrainerGenerator();
 
 	DefTrainer Generate(const DefTrainer& from);
@@ -36,7 +38,8 @@ public:
 	PokemonGenerator gen;
 
 	TextMods textChanges;
-	
+private:
+	GameContext context;
 	
 
 };

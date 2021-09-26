@@ -19,6 +19,10 @@ public:
 		NORMAL,
 		TRIANGLE,
 	};
+	enum EdgeType {
+		CLAMP,
+		REROLL
+	};
 	inline void MakeUniform() { type = UNIFORM; }
 	inline void MakeNormal(normalParams np) { type = NORMAL; this->np = np; }
 	inline void MakeTriangle(triangleParams tp) { type = TRIANGLE; this->tp = tp; }
@@ -27,19 +31,32 @@ public:
 	DiscreteDistribution();
 
 	DiscreteDistribution(int min, int max) 
-		: left(min), right(max), type(UNIFORM) {};
+		: left(min), right(max), type(UNIFORM), edgeType(CLAMP) {};
 	DiscreteDistribution(int min, int max, normalParams np) 
-		: left(min), right(max), type(NORMAL), np(np) {}
+		: left(min), right(max), type(NORMAL), edgeType(CLAMP), np(np) {}
 	DiscreteDistribution(int min, int max, triangleParams tp)
-		: left(min), right(max), type(TRIANGLE), tp(tp) {}
+		: left(min), right(max), type(TRIANGLE), edgeType(CLAMP), tp(tp) {}
 
 	inline int& Min() { return left; }
 	inline int& Max() { return right; }
 	inline Type GetType() { return type; }
+	inline EdgeType GetEdgeType() { return edgeType; }
 	inline void SetMinMax(int min, int max) { this->left = min; this->right = max; }
 	template<typename T>
 	int operator()(T& gen);
+	template<typename T>
+	int operator()(T& gen, int min, int max);
 
+	int left;
+	int right;
+	Type type;
+	EdgeType edgeType;
+	union {
+		normalParams np;
+		triangleParams tp;
+	};
+
+private:
 	template<typename T>
 	int GenValueClamp(T& gen);
 	template<typename T>
@@ -48,17 +65,6 @@ public:
 	int GenValueRetry(T& gen, int nTries = 10);
 	template<typename T>
 	int GenValueRetry(T& gen, int nTries, int min, int max);
-
-
-	int left;
-	int right;
-	Type type;
-	union {
-		normalParams np;
-		triangleParams tp;
-	};
-
-private:
 	template<typename T>
 	int GenValue(T& gen);
 };
@@ -116,5 +122,17 @@ int DiscreteDistribution::GenValueRetry(T& gen, int nTries, int min, int max) {
 template<typename T>
 int DiscreteDistribution::operator()(T& gen)
 {
-	return GenValueClamp(gen);
+	if (edgeType == CLAMP)
+		return GenValueClamp(gen);
+	else
+		return GenValueRetry(gen, 10);
+}
+
+template<typename T>
+int DiscreteDistribution::operator()(T& gen, int min, int max)
+{
+	if (edgeType == CLAMP)
+		return GenValueClamp(gen, min, max);
+	else
+		return GenValueRetry(gen, 10, min, max);
 }

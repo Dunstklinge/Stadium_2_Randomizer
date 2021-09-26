@@ -141,6 +141,7 @@
     <ClCompile Include="DefTrainer.cpp" />
     <ClCompile Include="Filters.cpp" />
     <ClCompile Include="DiscreteDistribution.cpp" />
+    <ClCompile Include="GameContext.cpp" />
     <ClCompile Include="GlobalConfigs.cpp" />
     <ClCompile Include="GlobalRandom.cpp" />
     <ClCompile Include="ItemTable.cpp" />
@@ -151,6 +152,7 @@
     <ClCompile Include="PokemonGenerator.cpp" />
     <ClCompile Include="PokemonNicknames.cpp" />
     <ClCompile Include="PokemonTable.cpp" />
+    <ClCompile Include="RandomizationParams.cpp" />
     <ClCompile Include="Randomizer.cpp" />
     <ClCompile Include="SpeciesGenerator.cpp" />
     <ClCompile Include="StadiumStrings.cpp" />
@@ -178,6 +180,7 @@
     <ClInclude Include="DefText.h" />
     <ClInclude Include="DefTrainer.h" />
     <ClInclude Include="Filters.h" />
+    <ClInclude Include="GameContext.h" />
     <ClInclude Include="GeneratorUtil.h" />
     <ClInclude Include="DiscreteDistribution.h" />
     <ClInclude Include="GlobalConfigs.h" />
@@ -189,6 +192,7 @@
     <ClInclude Include="PokemonNicknames.h" />
     <ClInclude Include="PokemonTable.h" />
     <ClInclude Include="PokemonGenerator.h" />
+    <ClInclude Include="RandomizationParams.h" />
     <ClInclude Include="Randomizer.h" />
     <ClInclude Include="CustomCode.h" />
     <ClInclude Include="resource.h" />
