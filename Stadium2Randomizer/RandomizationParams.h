@@ -2,6 +2,8 @@
 
 #include "DiscreteDistribution.h"
 
+#include <string>
+
 /*
 * Pure data object to contain all the possible choices for randomization.
 */
@@ -109,5 +111,8 @@ struct RandomizationParams
 
 	bool legalMovesOnly;
 	bool patchCic;
+
+	std::string Serialize();
+	bool Deserialize(std::string_view obj);
 };
 

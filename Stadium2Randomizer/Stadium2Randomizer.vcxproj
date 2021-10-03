@@ -186,6 +186,7 @@
     <ClInclude Include="GlobalConfigs.h" />
     <ClInclude Include="GlobalRandom.h" />
     <ClInclude Include="ItemTable.h" />
+    <ClInclude Include="json.h" />
     <ClInclude Include="MoveEffectValue.h" />
     <ClInclude Include="MoveGenerator.h" />
     <ClInclude Include="MoveTable.h" />

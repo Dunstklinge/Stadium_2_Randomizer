@@ -239,6 +239,7 @@
     <ClInclude Include="RandomizationParams.h">
       <Filter>GUI</Filter>
     </ClInclude>
+    <ClInclude Include="json.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="FormatNotes.txt">
