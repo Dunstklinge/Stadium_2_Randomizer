@@ -2,6 +2,7 @@
 
 #include <array>
 #include <exception>
+#include <stdexcept>
 
 std::string Utf8ToStadiumString(const std::string& utf8Str) {
 	//stadium 2 only understands some signs, they have weird numbers,

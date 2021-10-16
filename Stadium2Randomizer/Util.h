@@ -70,3 +70,7 @@ void PrintAllRosterTables(DefRoster* roster);
 void PrintAllNicknames(DefRoster* roster, DefText* text);
 void PrintAllTrainerNames(DefRoster* roster, DefText* text);
 
+struct Point {
+	double x;
+	double y;
+};

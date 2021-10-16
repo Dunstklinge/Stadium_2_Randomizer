@@ -24,11 +24,12 @@ PokemonGenerator::PokemonGenerator(GameContext context) : context(context)
 	levelDist = DiscreteDistribution(0, 100);
 
 	moveRandMove = MoveRandMode::EqualChance;
+	movePowerDist = DiscreteDistribution(20, 200);
 
 	randEvs = true;
 	randIvs = true;
 	bstEvIvs = true;
-	statsDist = DiscreteDistribution(0, 100);
+	statsDist = DiscreteDistribution();
 }
 
 
@@ -36,7 +37,7 @@ PokemonGenerator::~PokemonGenerator()
 {
 }
 
-DefPokemon PokemonGenerator::Generate() 
+DefPokemon PokemonGenerator::Generate() const
 {
 	DefPokemon mon;
 	
@@ -50,7 +51,7 @@ DefPokemon PokemonGenerator::Generate()
 	return mon;
 }
 
-DefPokemon PokemonGenerator::Generate(GameInfo::PokemonId species)
+DefPokemon PokemonGenerator::Generate(GameInfo::PokemonId species) const
 {
 	DefPokemon mon;
 
@@ -67,7 +68,7 @@ DefPokemon PokemonGenerator::Generate(GameInfo::PokemonId species)
 	return mon;
 }
 
-DefPokemon PokemonGenerator::Generate(const DefPokemon & from)
+DefPokemon PokemonGenerator::Generate(const DefPokemon & from) const
 {
 	DefPokemon mon = from;
 
@@ -88,7 +89,7 @@ DefPokemon PokemonGenerator::Generate(const DefPokemon & from)
 }
 
 template<typename T, typename It>
-void PokemonGenerator::Refresh(GameInfo::PokemonId species, Filter<T>& filter, std::vector<T>& cache, It iterator, unsigned size) {
+void PokemonGenerator::Refresh(GameInfo::PokemonId species, const Filter<T>& filter, std::vector<T>& cache, It iterator, unsigned size) const {
 	if (filter.buffer && filter.bufferN > 0)
 	{
 		cache.resize(filter.bufferN);
@@ -107,12 +108,12 @@ void PokemonGenerator::Refresh(GameInfo::PokemonId species, Filter<T>& filter, s
 }
 
 template<typename T, unsigned size>
-void PokemonGenerator::Refresh(GameInfo::PokemonId species, Filter<T>& filter, std::vector<T>& cache, const T(&baseBuffer)[size]) {
+void PokemonGenerator::Refresh(GameInfo::PokemonId species, const Filter<T>& filter, std::vector<T>& cache, const T(&baseBuffer)[size]) const {
 	Refresh(species, filter, cache, baseBuffer, size);
 }
 
 //this one has to be copy pastad because the filter accepts one less parameter, as there is no species context when generating species
-void PokemonGenerator::RefreshSpecies() {
+void PokemonGenerator::RefreshSpecies() const {
 	if (speciesFilter.buffer && speciesFilter.bufferN > 0)
 	{
 		cache.species.resize(speciesFilter.bufferN);
@@ -130,19 +131,19 @@ void PokemonGenerator::RefreshSpecies() {
 	}
 }
 
-void PokemonGenerator::RefreshItems(GameInfo::PokemonId species) {
+void PokemonGenerator::RefreshItems(GameInfo::PokemonId species) const {
 	Refresh(species, itemFilter, cache.items, GameInfo::ExistingItemMap);
 }
 
-void PokemonGenerator::RefreshMoves(GameInfo::PokemonId species) {
+void PokemonGenerator::RefreshMoves(GameInfo::PokemonId species) const {
 	Refresh(species, generalMoveFilter, cache.moves, GameInfo::MoveIdList);
 }
 
-void PokemonGenerator::RefreshMin1Moves(GameInfo::PokemonId species) {
+void PokemonGenerator::RefreshMin1Moves(GameInfo::PokemonId species) const {
 	Refresh(species, minOneMoveFilter, cache.min1Moves, cache.moves.data(), cache.moves.size());
 }
 
-void PokemonGenerator::GenSpecies(DefPokemon & mon)
+void PokemonGenerator::GenSpecies(DefPokemon & mon) const
 {
 	RefreshSpecies();
 	if (cache.species.size() == 0)
@@ -153,17 +154,17 @@ void PokemonGenerator::GenSpecies(DefPokemon & mon)
 	
 }
 
-void PokemonGenerator::GenLevel(DefPokemon& mon)
+void PokemonGenerator::GenLevel(DefPokemon& mon) const
 {
 	if (minLevel == maxLevel) {
 		mon.level = minLevel;
 		return;
 	}
-	levelDist.SetMinMax(minLevel, maxLevel);
-	mon.level = levelDist(Random::Generator);
+
+	mon.level = levelDist(Random::Generator, DiscreteDistribution::Borders { minLevel, maxLevel });
 }
 
-void PokemonGenerator::GenEvsIvs(DefPokemon & mon)
+void PokemonGenerator::GenEvsIvs(DefPokemon & mon) const
 {
 	unsigned int minEv = 0;
 	unsigned int maxEv = 0xFFFF;
@@ -171,79 +172,36 @@ void PokemonGenerator::GenEvsIvs(DefPokemon & mon)
 	unsigned int maxIv = 15;
 
 	if (bstEvIvs) {
-		constexpr double maxEvRange = 0.6; //in percent from ffff range
-		constexpr double maxIvRange = 0.5;
-
-		SatUAr bst = context.pokeList[mon.species - 1].CalcBST();
-		SatUAr shiftedBst = std::clamp(bst.t, 200u, 680u) - 200; //from 0 to 480
-		//200 bst should always be FFFF, 680bst should always be 0.
-		if constexpr (false) {
-			//round: 200 and 680 should have 0 derivation, while towards the middle (440) deviation should be high
-			//EVs
-			{
-				SatUAr<unsigned int> max = (480u - shiftedBst) * 136.53125; //note: 136.53125 * 480 = 0xFFFF
-				unsigned int deviation = (240 - std::abs(240 - (int)shiftedBst)) * (maxEvRange * 0xFFFF / 240.0);
-				maxEv = max;
-				minEv = max - deviation;
-			}
-			//IVs
-			{
-				SatUAr<unsigned int> max = (480u - shiftedBst) * 0.03125;
-				unsigned int deviation = (240 - std::abs(240 - (int)(bst - 200u))) * (maxIvRange * 15 / 240.0);
-				maxIv = max;
-				minIv = max - deviation;
-			}
-		}
-		else {
-			//EVs
-			{
-				//create a parallelogram-shape on the bst/ev graph:
-				//area size always N, but 0=[0xFFFF,0xFFFF+N] und 480=[0-N,0] clamped to [0,FFFF]
-				constexpr double N = maxEvRange * 0xFFFF;
-				//max line: b=0xFFFF+N, m = -(N/480) -(4369/32)
-				constexpr double fMaxB = 0xFFFF + N;
-				constexpr double fMaxM = -(N / 480) - (4369.0 / 32.0);
-				maxEv = std::clamp<int>(fMaxM * shiftedBst + fMaxB, 0, 0xFFFF);
-				minEv = std::clamp<int>(fMaxM * shiftedBst + fMaxB - N, 0, 0xFFFF);
-			}
-			//same for IVs, but 0xFFFF is just 0xF
-			{
-				constexpr double N = maxEvRange * 0xF;
-				constexpr double fMaxB = 0xF + N;
-				constexpr double fMaxM = -(N / 480) - (1.0 / 32.0);
-				maxIv = std::clamp<int>(fMaxM * shiftedBst + fMaxB, 0, 0xF);
-				minIv = std::clamp<int>(fMaxM * shiftedBst + fMaxB - N, 0, 0xF);
-			}
-		}
+		unsigned bst = context.pokeList[mon.species].CalcBST();
+		SatUAr shiftedBst = std::clamp(bst, 200u, 680u) - 200; //from 0 to 480
+		double bstPercent = shiftedBst / 480.0;
+		double shiftPercent = ((0.5 - bstPercent) * 2); //where -1 is strongest leftshift and +1 is strongest rightshift
+		
 
 	}
+	else {
+		DiscreteDistribution::Scaling evScaling { int(minEv), int(maxEv) };
+		mon.evHp = statsDist(Random::Generator, evScaling);
+		mon.evAtk = statsDist(Random::Generator, evScaling);
+		mon.evDef = statsDist(Random::Generator, evScaling);
+		mon.evSpd = statsDist(Random::Generator, evScaling);
+		mon.evSpc = statsDist(Random::Generator, evScaling);
 
-	statsDist.SetMinMax(minEv, maxEv);
-	mon.evHp = statsDist(Random::Generator);
-	mon.evAtk = statsDist(Random::Generator);
-	mon.evDef = statsDist(Random::Generator);
-	mon.evSpd = statsDist(Random::Generator);
-	mon.evSpc = statsDist(Random::Generator);
+		DiscreteDistribution::Scaling dvScaling{ int(minIv), int(maxIv) };
+		int dvs[4];
+		for (int i = 0; i < 4; i++) dvs[i] = statsDist(Random::Generator, evScaling);
+		mon.dvs = dvs[0] | (dvs[1] << 4) | (dvs[2] << 8) | (dvs[3] << 12);
+	}
 
-		
-	
-	//double nStandardDists = 2;
-	statsDist.SetMinMax(minIv, maxIv);
-	int dvs[4];
-	for (int i = 0; i < 4; i++) dvs[i] = statsDist(Random::Generator);
-	mon.dvs = dvs[0] | (dvs[1] << 4) | (dvs[2] << 8) | (dvs[3] << 12);
-	
-	
-	
 }
 
-void PokemonGenerator::GenHappiness(DefPokemon& mon) 
+void PokemonGenerator::GenHappiness(DefPokemon& mon) const
 {
 	std::uniform_int_distribution<int> dist(0, 0xFF);
 	mon.happiness = dist(Random::Generator);
 }
 
-void PokemonGenerator::GenMoves(DefPokemon & mon)
+void PokemonGenerator::GenMoves(DefPokemon & mon) const
 {
 	RefreshMoves(mon.species);
 	
@@ -281,7 +239,7 @@ void PokemonGenerator::GenMoves(DefPokemon & mon)
 
 }
 
-void PokemonGenerator::GenMovesBasedOnOldMovePower(DefPokemon& mon) {
+void PokemonGenerator::GenMovesBasedOnOldMovePower(DefPokemon& mon) const {
 	double oldRating = RateMove(GameInfo::Moves[mon.move1]);
 	RefreshMoves(mon.species);
 	std::sort(cache.moves.begin(), cache.moves.end(), [&](GameInfo::MoveId lhs, GameInfo::MoveId rhs) {
@@ -296,7 +254,7 @@ void PokemonGenerator::GenMovesBasedOnOldMovePower(DefPokemon& mon) {
 	}
 }
 
-void PokemonGenerator::GenItem(DefPokemon & mon)
+void PokemonGenerator::GenItem(DefPokemon & mon) const
 {
 	RefreshItems(mon.species);
 

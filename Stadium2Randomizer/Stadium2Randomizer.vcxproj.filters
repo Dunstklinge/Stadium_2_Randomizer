@@ -240,6 +240,7 @@
       <Filter>GUI</Filter>
     </ClInclude>
     <ClInclude Include="json.h" />
+    <ClInclude Include="json_fwd.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="FormatNotes.txt">

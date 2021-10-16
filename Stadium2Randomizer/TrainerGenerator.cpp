@@ -53,6 +53,7 @@ DefTrainer TrainerGenerator::Generate(const DefTrainer & from)
 					return itemInfo.enhancedType == context.pokeList[pid].type1
 						|| itemInfo.enhancedType == context.pokeList[pid].type2;
 				}
+				return true;
 			},
 			GameInfo::BattleItemMap,
 			_countof(GameInfo::BattleItemMap)

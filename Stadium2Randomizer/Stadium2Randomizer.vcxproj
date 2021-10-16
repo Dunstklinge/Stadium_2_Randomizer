@@ -28,7 +28,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
     <UseOfMfc>Dynamic</UseOfMfc>
   </PropertyGroup>
@@ -187,6 +187,7 @@
     <ClInclude Include="GlobalRandom.h" />
     <ClInclude Include="ItemTable.h" />
     <ClInclude Include="json.h" />
+    <ClInclude Include="json_fwd.h" />
     <ClInclude Include="MoveEffectValue.h" />
     <ClInclude Include="MoveGenerator.h" />
     <ClInclude Include="MoveTable.h" />

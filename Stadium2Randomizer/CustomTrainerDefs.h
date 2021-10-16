@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <array>
+#include <string>
 
 class CustomTrainerDefs
 {

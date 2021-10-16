@@ -1,38 +1,10 @@
 #include "stdafx.h"
+
 #include "RandomizationParams.h"
+#include "DiscreteDistribution.h"
 
 #include "json.h"
 using namespace nlohmann;
-
-void to_json(json& j, const DiscreteDistribution& d) {
-	j["left"] = d.left;
-	j["right"] = d.right;
-	j["type"] = d.type;
-	j["edgeType"] = d.edgeType;
-	if (d.type == DiscreteDistribution::NORMAL) {
-		j["unionParams"]["nStandardDerivations"] = d.np.nStandardDerivations;
-		j["unionParams"]["xTranslation"] = d.np.xTranslation;
-	}
-	else if (d.type == DiscreteDistribution::TRIANGLE) {
-		j["unionParams"]["xPeak"] = d.tp.xPeak;
-		j["unionParams"]["xTranslation"] = d.tp.xTranslation;
-	}
-}
-
-void from_json(const json& j, DiscreteDistribution& d) {
-	j.at("left").get_to(d.left);
-	j.at("right").get_to(d.right);
-	j.at("type").get_to(d.type);
-	j.at("edgeType").get_to(d.edgeType);
-	if (d.type == DiscreteDistribution::NORMAL) {
-		j.at("unionParams").at("nStandardDerivations").get_to(d.np.nStandardDerivations);
-		j.at("unionParams").at("xTranslation").get_to(d.np.xTranslation);
-	}
-	else if (d.type == DiscreteDistribution::TRIANGLE) {
-		j.at("unionParams").at("xPeak").get_to(d.tp.xPeak);
-		j.at("unionParams").at("xTranslation").get_to(d.tp.xTranslation);
-	}
-}
 
 //fuck this language needs fucking reflection so badly
 std::string RandomizationParams::Serialize() {
@@ -40,7 +12,6 @@ std::string RandomizationParams::Serialize() {
 	std::string retVal;
 
 	try {
-
 		j["uber"]["moves"]["randomize"] = uber.moves.randomize;
 		j["uber"]["moves"]["balance"] = uber.moves.balance;
 		j["uber"]["moves"]["acc"] = uber.moves.acc;
@@ -72,10 +43,10 @@ std::string RandomizationParams::Serialize() {
 		j["rentals"]["randLevels"] = rentals.randLevels;
 		j["rentals"]["randLevelsDist"] = rentals.randLevelsDist;
 		j["rentals"]["randEvIv"] = rentals.randEvIv;
-		j["rentals"]["randEvIvDist"] = rentals.randEvIvDist;
+		j["rentals"]["randEvIvDist"] = rentals.randRelEvIvDist;
 		j["rentals"]["randMoves"] = rentals.randMoves;
 		j["rentals"]["randMovesBalanced"] = rentals.randMovesBalanced;
-		j["rentals"]["randMovesBalancedDist"] = rentals.randMovesBalancedDist;
+		j["rentals"]["randMovesBalancedDist"] = rentals.randRelMovesBalancedDist;
 		j["rentals"]["randPrimecupLevels"] = rentals.randPrimecupLevels;
 		j["rentals"]["randChooseItems"] = rentals.randChooseItems;
 		j["rentals"]["changeItemN"] = rentals.changeItemN;
@@ -110,10 +81,10 @@ std::string RandomizationParams::Serialize() {
 		j["trainerMons"]["trainerRandEvIv"] = trainerMons.trainerRandEvIv;
 		j["trainerMons"]["trainerRandHappiness"] = trainerMons.trainerRandHappiness;
 		j["trainerMons"]["trainerRandItems"] = trainerMons.trainerRandItems;
-		j["trainerMons"]["trainerRandIvEvDist"] = trainerMons.trainerRandIvEvDist;
+		j["trainerMons"]["trainerRandIvEvDist"] = trainerMons.trainerRandRelIvEvDist;
 		j["trainerMons"]["trainerRandPoke"] = trainerMons.trainerRandPoke;
 		j["trainerMons"]["trainerRandMovesDetails"] = trainerMons.trainerRandMovesDetails;
-		j["trainerMons"]["trainerRandMovesDetailsDist"] = trainerMons.trainerRandMovesDetailsDist;
+		j["trainerMons"]["trainerRandMovesDetailsDist"] = trainerMons.trainerRandRelMovesDetailsDist;
 
 		retVal = j.dump();
 	}
@@ -158,10 +129,10 @@ bool RandomizationParams::Deserialize(std::string_view obj) {
 		j.at("rentals").at("randLevels").get_to(rentals.randLevels);
 		j.at("rentals").at("randLevelsDist").get_to(rentals.randLevelsDist);
 		j.at("rentals").at("randEvIv").get_to(rentals.randEvIv);
-		j.at("rentals").at("randEvIvDist").get_to(rentals.randEvIvDist);
+		j.at("rentals").at("randEvIvDist").get_to(rentals.randRelEvIvDist);
 		j.at("rentals").at("randMoves").get_to(rentals.randMoves);
 		j.at("rentals").at("randMovesBalanced").get_to(rentals.randMovesBalanced);
-		j.at("rentals").at("randMovesBalancedDist").get_to(rentals.randMovesBalancedDist);
+		j.at("rentals").at("randMovesBalancedDist").get_to(rentals.randRelMovesBalancedDist);
 		j.at("rentals").at("randPrimecupLevels").get_to(rentals.randPrimecupLevels);
 		j.at("rentals").at("randChooseItems").get_to(rentals.randChooseItems);
 		j.at("rentals").at("changeItemN").get_to(rentals.changeItemN);
@@ -196,10 +167,10 @@ bool RandomizationParams::Deserialize(std::string_view obj) {
 		j.at("trainerMons").at("trainerRandEvIv").get_to(trainerMons.trainerRandEvIv);
 		j.at("trainerMons").at("trainerRandHappiness").get_to(trainerMons.trainerRandHappiness);
 		j.at("trainerMons").at("trainerRandItems").get_to(trainerMons.trainerRandItems);
-		j.at("trainerMons").at("trainerRandIvEvDist").get_to(trainerMons.trainerRandIvEvDist);
+		j.at("trainerMons").at("trainerRandIvEvDist").get_to(trainerMons.trainerRandRelIvEvDist);
 		j.at("trainerMons").at("trainerRandPoke").get_to(trainerMons.trainerRandPoke);
 		j.at("trainerMons").at("trainerRandMovesDetails").get_to(trainerMons.trainerRandMovesDetails);
-		j.at("trainerMons").at("trainerRandMovesDetailsDist").get_to(trainerMons.trainerRandMovesDetailsDist);
+		j.at("trainerMons").at("trainerRandMovesDetailsDist").get_to(trainerMons.trainerRandRelMovesDetailsDist);
 	}
 	catch (json::exception& what) {
 		return false;

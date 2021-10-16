@@ -17,9 +17,9 @@ public:
 	PokemonGenerator(GameContext context);
 	~PokemonGenerator();
 
-	DefPokemon Generate();
-	DefPokemon Generate(GameInfo::PokemonId species); //generates mon of this species
-	DefPokemon Generate(const DefPokemon& from); //may keep info from this mon
+	DefPokemon Generate() const;
+	DefPokemon Generate(GameInfo::PokemonId species) const; //generates mon of this species
+	DefPokemon Generate(const DefPokemon& from) const; //may keep info from this mon
 
 	/* for Generate from an existing pokemon */
 	bool changeSpecies;
@@ -83,13 +83,13 @@ public:
 		cache = Cache{};
 	}
 private:
-	void GenSpecies(DefPokemon& mon);
-	void GenLevel(DefPokemon& mon);
-	void GenEvsIvs(DefPokemon& mon);
-	void GenHappiness(DefPokemon& mon);
-	void GenMoves(DefPokemon& mon);
-	void GenItem(DefPokemon& mon);
-	void GenMovesBasedOnOldMovePower(DefPokemon& mon);
+	void GenSpecies(DefPokemon& mon) const;
+	void GenLevel(DefPokemon& mon) const;
+	void GenEvsIvs(DefPokemon& mon) const;
+	void GenHappiness(DefPokemon& mon) const;
+	void GenMoves(DefPokemon& mon) const;
+	void GenItem(DefPokemon& mon) const;
+	void GenMovesBasedOnOldMovePower(DefPokemon& mon) const;
 
 	struct Cache {
 		std::vector<GameInfo::PokemonId> species;
@@ -97,17 +97,17 @@ private:
 		std::vector<GameInfo::MoveId> moves;
 		std::vector<GameInfo::MoveId> min1Moves;
 	};
-	Cache cache;
+	mutable Cache cache;
 
 	GameContext context;
 
 	template<typename T, unsigned size>
-	void Refresh(GameInfo::PokemonId species, Filter<T>& filter, std::vector<T>& cache, const T (&baseBuffer)[size]);
+	void Refresh(GameInfo::PokemonId species, const Filter<T>& filter, std::vector<T>& cache, const T (&baseBuffer)[size]) const;
 	template<typename T, typename It>
-	void Refresh(GameInfo::PokemonId species, Filter<T>& filter, std::vector<T>& cache, It iterator, unsigned size);
-	void RefreshSpecies();
-	void RefreshItems(GameInfo::PokemonId species);
-	void RefreshMoves(GameInfo::PokemonId species);
-	void RefreshMin1Moves(GameInfo::PokemonId species);
+	void Refresh(GameInfo::PokemonId species, const Filter<T>& filter, std::vector<T>& cache, It iterator, unsigned size) const;
+	void RefreshSpecies() const;
+	void RefreshItems(GameInfo::PokemonId species) const;
+	void RefreshMoves(GameInfo::PokemonId species) const;
+	void RefreshMin1Moves(GameInfo::PokemonId species) const;
 };
 

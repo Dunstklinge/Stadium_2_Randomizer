@@ -358,7 +358,7 @@ void Randomizer::RandomizeRegularRentals()
 	pokeGen.randEvs = m_settings->rentals.randEvIv;
 	pokeGen.randIvs = m_settings->rentals.randEvIv;
 	pokeGen.bstEvIvs = m_settings->rentals.rentalSpeciesEvIv;
-	pokeGen.statsDist = m_settings->rentals.randEvIvDist;
+	pokeGen.statsDist = m_settings->rentals.randRelEvIvDist;
 	pokeGen.levelDist = m_settings->rentals.randLevelsDist;
 	pokeGen.changeHappiness = m_settings->rentals.randRentalHappiness;
 
@@ -536,7 +536,7 @@ void Randomizer::RandomizeHackedRentals()
 	pokeGen.randEvs = m_settings->rentals.randEvIv;
 	pokeGen.randIvs = m_settings->rentals.randEvIv;
 	pokeGen.bstEvIvs = m_settings->rentals.rentalSpeciesEvIv;
-	pokeGen.statsDist = m_settings->rentals.randEvIvDist;
+	pokeGen.statsDist = m_settings->rentals.randRelEvIvDist;
 	pokeGen.levelDist = m_settings->rentals.randLevelsDist;
 	pokeGen.changeHappiness = m_settings->rentals.randRentalHappiness;
 
@@ -803,7 +803,7 @@ void Randomizer::RandomizeTrainers()
 	tgen.gen.changeEvsIvs = m_settings->trainerMons.trainerRandEvIv;
 	tgen.gen.randEvs = m_settings->trainerMons.trainerRandEvIv;
 	tgen.gen.randIvs = m_settings->trainerMons.trainerRandEvIv;
-	tgen.gen.statsDist = m_settings->trainerMons.trainerRandIvEvDist;
+	tgen.gen.statsDist = m_settings->trainerMons.trainerRandRelIvEvDist;
 	tgen.gen.changeHappiness = m_settings->trainerMons.trainerRandHappiness;
 	tgen.gen.changeItem = m_settings->trainerMons.trainerRandItems;
 	tgen.gen.levelDist = m_settings->rentals.randLevelsDist;

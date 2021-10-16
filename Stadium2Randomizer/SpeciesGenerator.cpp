@@ -51,11 +51,11 @@ GameInfo::Pokemon SpeciesGenerator::Generate(int id, const GameInfo::Pokemon& fr
 		else if (stayCloseBST) {
 			int maxDelta = bst * 0.1f;
 			int min = (dontDecreaseEvolutionBST && preEvo) ? bst : bst - maxDelta;
-			bst = bstDist(Random::Generator, min, bst + maxDelta);
+			bst = bstDist(Random::Generator, DiscreteDistribution::Borders{ min, bst + maxDelta });
 		}
 		else if (randomBST) {
 			if (dontDecreaseEvolutionBST && preEvo) {
-				bst = bstDist(Random::Generator, preEvo->CalcBST(), bstDist.Max());
+				bst = bstDist(Random::Generator, DiscreteDistribution::Borders{ int(preEvo->CalcBST()), int(bstDist.GetBorders().max) });
 			}
 			else {
 				bst = bstDist(Random::Generator);

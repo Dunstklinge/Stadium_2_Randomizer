@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <string>
 
 namespace {
 template <  bool saveRa,									//if true, puts a or at, ra, r0 before the 3 op jalr

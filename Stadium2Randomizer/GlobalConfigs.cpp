@@ -1,5 +1,7 @@
 #include "GlobalConfigs.h"
 
+#include <stdexcept>
+
 namespace GlobalConfig {
 	PokemonNicknames PokemonNicks;
 	TrainerNames TrainerNicks;
