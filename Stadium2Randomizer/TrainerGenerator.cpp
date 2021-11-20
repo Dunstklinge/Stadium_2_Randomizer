@@ -99,7 +99,7 @@ DefTrainer TrainerGenerator::Generate(const DefTrainer & from)
 			auto oldFilterFunc = gen.speciesFilter.func;
 
 			gen.speciesFilter.func = [&](GameInfo::PokemonId pid) {
-				if (!oldFilterFunc(pid)) return false;
+				if (oldFilterFunc && !oldFilterFunc(pid)) return false;
 				if (stayCloseToBST && !FilterPokemonByBST(pid, minBst, maxBst)) return false;
 				for (int k = 0; k < i; k++) {
 					if (ret.pokemon[k].species == pid) {

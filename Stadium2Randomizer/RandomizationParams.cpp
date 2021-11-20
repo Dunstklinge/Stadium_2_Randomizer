@@ -55,6 +55,7 @@ std::string RandomizationParams::Serialize() {
 		j["rentals"]["strPrimeCupLevel"] = rentals.strPrimeCupLevel;
 		j["rentals"]["randIncludeMonspecificItems"] = rentals.randIncludeMonspecificItems;
 		j["rentals"]["changeGlcRentalLevel"] = rentals.changeGlcRentalLevel;
+		j["rentals"]["glcTableCount"] = rentals.glcTableCount;
 		j["rentals"]["seperateGlcRentalsLevel"] = rentals.seperateGlcRentalsLevel;
 		j["rentals"]["rentalSpeciesEvIv"] = rentals.rentalSpeciesEvIv;
 		j["rentals"]["moreRentalTables"] = rentals.moreRentalTables;
@@ -62,6 +63,7 @@ std::string RandomizationParams::Serialize() {
 		j["rentals"]["multiplePokecupRentals"] = rentals.multiplePokecupRentals;
 		j["rentals"]["multipleR2Rentals"] = rentals.multipleR2Rentals;
 
+		j["trainers"]["randName"] = trainers.randName;
 		j["trainers"]["shuffleBosses"] = trainers.shuffleBosses;
 		j["trainers"]["shuffleCross"] = trainers.shuffleCross;
 		j["trainers"]["shuffleRegulars"] = trainers.shuffleRegulars;
@@ -85,6 +87,9 @@ std::string RandomizationParams::Serialize() {
 		j["trainerMons"]["trainerRandPoke"] = trainerMons.trainerRandPoke;
 		j["trainerMons"]["trainerRandMovesDetails"] = trainerMons.trainerRandMovesDetails;
 		j["trainerMons"]["trainerRandMovesDetailsDist"] = trainerMons.trainerRandRelMovesDetailsDist;
+
+		j["min1Buttons"] = min1Buttons;
+		j["legalMovesOnly"] = legalMovesOnly;
 
 		retVal = j.dump();
 	}
@@ -141,6 +146,7 @@ bool RandomizationParams::Deserialize(std::string_view obj) {
 		j.at("rentals").at("strPrimeCupLevel").get_to(rentals.strPrimeCupLevel);
 		j.at("rentals").at("randIncludeMonspecificItems").get_to(rentals.randIncludeMonspecificItems);
 		j.at("rentals").at("changeGlcRentalLevel").get_to(rentals.changeGlcRentalLevel);
+		j.at("rentals").at("glcTableCount").get_to(rentals.glcTableCount);
 		j.at("rentals").at("seperateGlcRentalsLevel").get_to(rentals.seperateGlcRentalsLevel);
 		j.at("rentals").at("rentalSpeciesEvIv").get_to(rentals.rentalSpeciesEvIv);
 		j.at("rentals").at("moreRentalTables").get_to(rentals.moreRentalTables);
@@ -148,6 +154,7 @@ bool RandomizationParams::Deserialize(std::string_view obj) {
 		j.at("rentals").at("multiplePokecupRentals").get_to(rentals.multiplePokecupRentals);
 		j.at("rentals").at("multipleR2Rentals").get_to(rentals.multipleR2Rentals);
 
+		j.at("trainers").at("randName").get_to(trainers.randName);
 		j.at("trainers").at("shuffleBosses").get_to(trainers.shuffleBosses);
 		j.at("trainers").at("shuffleCross").get_to(trainers.shuffleCross);
 		j.at("trainers").at("shuffleRegulars").get_to(trainers.shuffleRegulars);
@@ -171,6 +178,9 @@ bool RandomizationParams::Deserialize(std::string_view obj) {
 		j.at("trainerMons").at("trainerRandPoke").get_to(trainerMons.trainerRandPoke);
 		j.at("trainerMons").at("trainerRandMovesDetails").get_to(trainerMons.trainerRandMovesDetails);
 		j.at("trainerMons").at("trainerRandMovesDetailsDist").get_to(trainerMons.trainerRandRelMovesDetailsDist);
+
+		j.at("min1Buttons").get_to(min1Buttons);
+		j.at("legalMovesOnly").get_to(legalMovesOnly);
 	}
 	catch (json::exception& what) {
 		return false;

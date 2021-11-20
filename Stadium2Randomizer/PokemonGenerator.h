@@ -73,7 +73,12 @@ public:
 	bool randIvs;
 	bool bstEvIvs;
 	DiscreteDistribution statsDist;
-	//bool statsUniformDistribution;
+	static DiscreteDistribution::Scaling BstEvIvBias(DiscreteDistribution::Scaling startScaling, double bias) {
+		return startScaling.MoveByPercent(bias * 3);
+	}
+	static DiscreteDistribution::Scaling MovePowerBias(DiscreteDistribution::Scaling startScaling, double bias) {
+		return startScaling.MoveByPercent(bias * 3);
+	}
 
 	inline void ClearAllFilters() {
 		speciesFilter = Filter<GameInfo::PokemonId>{};

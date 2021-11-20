@@ -33,6 +33,8 @@
 #define IDC_EDGLCLEVEL                  1032
 #define IDC_CBSPECIESEVIV               1033
 #define IDC_CB_TRAINERPOKE_MIN1ATK      1034
+#define IDC_EDGLCLEVEL2                 1035
+#define IDC_EDGLCTABLECNT               1035
 #define IDC_CBSTAYCLOSETOBST            1036
 #define IDC_CBBOSSSTAYCLOSETOBST        1037
 #define IDC_CBMORERENTALTABLES          1038

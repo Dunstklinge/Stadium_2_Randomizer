@@ -24,6 +24,11 @@ public:
 	static void Randomize(const CString& path, const RandomizationParams& settings, CWnd* owner);
 	void RandomizeRom(const CString& path, CWnd* owner);
 
+	static constexpr unsigned int WM_PROGRESS = WM_USER + 2;
+
+	double GetCurrProgress() const {
+		return m_currProgress;
+	}
 private:
 
 	enum CupRulesId {
@@ -45,6 +50,7 @@ private:
 
 	const RandomizationParams* m_settings;	// randomization choices made by the user
 	CWnd* m_owner;							// owner of popus, receives progress notifications
+	double m_currProgress = 0.0;				// current randomization progress
 
 	std::ofstream m_genLog;		// a file which protocols what was randomized and how
 	std::ifstream m_in;			// stream to the ROM file

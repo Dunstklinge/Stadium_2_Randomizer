@@ -74,8 +74,8 @@ void Randomizer::RandomizeRom(const CString & path, CWnd* owner)
 
 void Randomizer::SetProgress(double percent)
 {
-	//m_settings->progressBar.SetPos((int)((m_progressBarMax - m_progressBarMin) * percent + m_progressBarMin));
-	//TODO
+	m_currProgress = percent;
+	m_owner->SendMessage(WM_PROGRESS, 0, 0);
 }
 
 void Randomizer::SetPartialProgress(double percent)
@@ -609,10 +609,20 @@ void Randomizer::RandomizeHackedRentals()
 		AddRentalSet(tid(6),-1); //end it
 	}
 	SetPartialProgress(0.2);
+	std::vector<unsigned> glcSets;
+	std::vector<int> glcOrder;
 	if (m_settings->rentals.multipleGlcRentals) {
-		AddRentalSet(tid(8), GenRentalSetAndAdd(GLC)); //start at falkner
-		AddRentalSet(tid(13), GenRentalSetAndAdd(GLC));//new rentals from jasmine
-		AddRentalSet(tid(19), GenRentalSetAndAdd(GLC));//new rentals after elite 4
+		//Generate n tables
+		for (int i = 0; i < m_settings->rentals.glcTableCount; i++) {
+			glcSets.push_back(GenRentalSetAndAdd(GLC));
+		}
+		//spread them randomly
+		std::uniform_int_distribution<int> dist(0, glcSets.size()-1);
+		for (int i = 8; i < 29; i++) {
+			int chosenset = glcSets[dist(Random::Generator)];
+			AddRentalSet(tid(i), chosenset);
+			glcOrder.push_back(chosenset);
+		}
 		AddRentalSet(tid(29),-1); //end it after rival
 	}
 	SetPartialProgress(0.4);
@@ -636,9 +646,17 @@ void Randomizer::RandomizeHackedRentals()
 		SetPartialProgress(0.7);
 
 		if (m_settings->rentals.multipleGlcRentals) {
-			AddRentalSet(tid(35), GenRentalSetAndAdd(GLC)); //start at falkner
-			AddRentalSet(tid(40), GenRentalSetAndAdd(GLC));//new rentals from jasmine
-			AddRentalSet(tid(46), GenRentalSetAndAdd(GLC));//new rentals after elite 4
+			glcSets.clear();
+			//Generate n tables
+			for (int i = 0; i < m_settings->rentals.glcTableCount; i++) {
+				glcSets.push_back(GenRentalSetAndAdd(GLC));
+			}
+			//spread them randomly
+			std::uniform_int_distribution<int> dist(0, glcSets.size()-1);
+			for (int i = 8; i < 29; i++) {
+				AddRentalSet(tid(i), glcSets[dist(Random::Generator)]);
+			}
+			AddRentalSet(tid(29), -1); //end it after rival
 			AddRentalSet(tid(56),-1); //end it after rival
 		}
 	}
@@ -1120,12 +1138,30 @@ void Randomizer::RandomizeItems()
 			AddItemSet(tid(4), GenItemsAndAdd(nItems));
 			AddItemSet(tid(5), GenItemsAndAdd(nItems));
 		}
-		unsigned int littleCup = AddItemSet(tid(6), GenItemsAndAdd(nItems));
-		unsigned int primeCup = AddItemSet(tid(7), GenItemsAndAdd(nItems));
-		unsigned int glc = AddItemSet(tid(8), GenItemsAndAdd(nItems));
-		if (m_settings->rentals.multipleGlcRentals) {
-			AddItemSet(tid(13), GenItemsAndAdd(nItems));//new rentals from jasmine
-			AddItemSet(tid(19), GenItemsAndAdd(nItems));//new rentals after elite 4
+		unsigned int littleCup = GenItemsAndAdd(nItems);
+		unsigned int primeCup = GenItemsAndAdd(nItems);
+		AddItemSet(tid(6), littleCup);
+		AddItemSet(tid(7), primeCup);
+		std::vector<unsigned> glcSets;
+		std::vector<int> glcOrder;
+		if (!m_settings->rentals.multipleGlcRentals) {
+			//only one set for all of glc
+			int chosenset = GenItemsAndAdd(nItems);
+			AddItemSet(tid(8), chosenset);
+			glcOrder.push_back(chosenset);
+		}
+		else {
+			//Generate n tables
+			for (int i = 0; i < m_settings->rentals.glcTableCount; i++) {
+				glcSets.push_back(GenItemsAndAdd(nItems));
+			}
+			//spread them randomly
+			std::uniform_int_distribution<int> dist(0, glcSets.size() - 1);
+			for (int i = 8; i < 29; i++) {
+				int chosenset = glcSets[dist(Random::Generator)];
+				AddItemSet(tid(i), chosenset);
+				glcOrder.push_back(chosenset);
+			}
 		}
 		AddItemSet(tid(29), pokeCup);
 		if (m_settings->rentals.multipleR2Rentals) {
@@ -1145,12 +1181,26 @@ void Randomizer::RandomizeItems()
 			if (m_settings->rentals.multiplePokecupRentals) {
 				AddItemSet(tid(34), GenItemsAndAdd(nItems));
 			}
-			AddItemSet(tid(35), glc);
-			if (m_settings->rentals.multipleGlcRentals) {
-				AddItemSet(tid(35), GenItemsAndAdd(nItems)); //start at falkner
-				AddItemSet(tid(40), GenItemsAndAdd(nItems));//new rentals from jasmine
-				AddItemSet(tid(46), GenItemsAndAdd(nItems));//new rentals after elite 4
-				AddItemSet(tid(56), defaultRentalItems); //end it after rival
+			std::vector<unsigned> glcSets;
+			std::vector<int> glcOrder;
+			if (!m_settings->rentals.multipleGlcRentals) {
+				//only one set for all of glc
+				int chosenset = GenItemsAndAdd(nItems);
+				AddItemSet(tid(8), chosenset);
+				glcOrder.push_back(chosenset);
+			}
+			else {
+				//Generate n tables
+				for (int i = 0; i < m_settings->rentals.glcTableCount; i++) {
+					glcSets.push_back(GenItemsAndAdd(nItems));
+				}
+				//spread them randomly
+				std::uniform_int_distribution<int> dist(0, glcSets.size() - 1);
+				for (int i = 8; i < 29; i++) {
+					int chosenset = glcSets[dist(Random::Generator)];
+					AddItemSet(tid(i), chosenset);
+					glcOrder.push_back(chosenset);
+				}
 			}
 		}
 	}

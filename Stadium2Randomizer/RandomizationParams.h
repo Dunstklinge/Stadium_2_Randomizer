@@ -76,6 +76,7 @@ struct RandomizationParams
 		int strPrimeCupLevel;
 		bool randIncludeMonspecificItems;
 		bool changeGlcRentalLevel;
+		int glcTableCount;
 		int seperateGlcRentalsLevel;
 		bool rentalSpeciesEvIv;
 		bool moreRentalTables;
