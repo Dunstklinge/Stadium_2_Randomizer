@@ -33,3 +33,35 @@ double GameContext::HighestMoveRating() const
     }
     return calcCache.highestMoveRating;
 }
+
+double GameContext::LowestBst() const
+{
+    if (isnan(calcCache.lowestBst)) {
+
+        using GameInfo::Pokemon;
+        double lowest = pokeList[0].CalcBST();
+        for (const Pokemon* it = pokeList + 1; it != pokeListEnd; it++) {
+            double bst = it->CalcBST();
+            if (bst < lowest) lowest = bst;
+        }
+
+        calcCache.lowestBst = lowest;
+    }
+    return calcCache.lowestBst;
+}
+
+double GameContext::HighestBst() const
+{
+    if (isnan(calcCache.highestBst)) {
+
+        using GameInfo::Pokemon;
+        double highest = pokeList[0].CalcBST();
+        for (const Pokemon* it = pokeList + 1; it != pokeListEnd; it++) {
+            double bst = it->CalcBST();
+            if (bst > highest) highest = bst;
+        }
+
+        calcCache.highestBst = highest;
+    }
+    return calcCache.highestBst;
+}

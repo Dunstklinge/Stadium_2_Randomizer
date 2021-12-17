@@ -28,10 +28,14 @@ struct GameContext
 
 	double LowestMoveRating() const;
 	double HighestMoveRating() const;
+	double LowestBst() const;
+	double HighestBst() const;
 private:
 	mutable struct {
 		double lowestMoveRating = NAN;
 		double highestMoveRating = NAN;
+		double lowestBst = NAN;
+		double highestBst = NAN;
 	} calcCache;
 };
 

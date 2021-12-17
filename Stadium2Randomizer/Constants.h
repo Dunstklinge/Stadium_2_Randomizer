@@ -17,6 +17,7 @@ namespace TableInfo {
 	enum TextNumber {
 		POKEMON_NAMES = 0x00,
 		MOVE_NAMES = 0x06,
+		MOVE_DESCRIPTIONS = 0x07,
 		TEXT_TRAINER_NAMES = 0x2A,
 		
 		TEXT_TRAINER_TEXT_FIRST = 0x4C

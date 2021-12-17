@@ -3,10 +3,21 @@
 #include "GlobalRandom.h"
 #include "GeneratorUtil.h"
 #include "json.h"
+
+#include <boost/math/distributions.hpp>
+
 using namespace nlohmann;
 
 #define _USE_MATH_DEFINES
 #include <math.h>
+
+double DiscreteDistribution::NormalCdf(double x, double mean, double stddev) {
+	return boost::math::cdf(boost::math::normal_distribution(mean, stddev), x);	
+}
+
+double DiscreteDistribution::NormalIcdf(double x, double mean, double stddev) {
+	return boost::math::quantile(boost::math::normal_distribution(mean, stddev), x);
+}
 
 double DiscreteDistribution::ChanceBetween(double lhs, double rhs, Scaling scaling, Borders borders) const {
 	switch (GetType()) {
@@ -15,16 +26,13 @@ double DiscreteDistribution::ChanceBetween(double lhs, double rhs, Scaling scali
 		return std::clamp(odds, 0.0, 1.0);
 	}
 	case NORMAL: {
-		auto cdf = [](double x, double mean, double stddev) {
-			return 0.5 * erfc((mean - x) * M_SQRT1_2 * (1 / stddev));
-		};
 		double mean = np.mean(scaling);
 		double stddev = np.stddev(scaling);
-		double lhsCdf = cdf(lhs, mean, stddev);
-		double rhsCdf = cdf(rhs, mean, stddev);
+		double lhsCdf = NormalCdf(lhs, mean, stddev);
+		double rhsCdf = NormalCdf(rhs, mean, stddev);
 		double chance = rhsCdf - lhsCdf;
-		double subMinChance = cdf(borders.min, mean, stddev);
-		double overMaxChance = 1 - cdf(borders.max, mean, stddev);
+		double subMinChance = NormalCdf(borders.min, mean, stddev);
+		double overMaxChance = 1 - NormalCdf(borders.max, mean, stddev);
 		if (GetEdgeType() == CLAMP) {
 			if (lhs <= borders.min) {
 				chance += subMinChance;

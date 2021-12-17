@@ -173,8 +173,13 @@ void PokemonGenerator::GenEvsIvs(DefPokemon & mon) const
 
 	if (bstEvIvs) {
 		unsigned bst = context.pokeList[mon.species].CalcBST();
-		SatUAr shiftedBst = std::clamp(bst, 200u, 680u) - 200; //from 0 to 480
-		double bstPercent = shiftedBst / 480.0;
+		//cap at 5% and 95% respectivelz
+		unsigned minBst = context.LowestBst() + (context.HighestBst() - context.LowestBst()) * 0.05;
+		unsigned maxBst = context.HighestBst() - (context.HighestBst() - context.LowestBst()) * 0.05;
+		
+		//create bias that is -1 at minBst and +1 at maxBst
+		SatUAr shiftedBst = std::clamp(bst, minBst, maxBst) - minBst;
+		double bstPercent = shiftedBst / double(maxBst);
 		double bias = ((0.5 - bstPercent) * 2); //where -1 is strongest leftshift and +1 is strongest rightshift
 		DiscreteDistribution::Scaling evScaling = BstEvIvBias({ int(minEv), int(maxEv) }, bias);
 		mon.evHp = statsDist(Random::Generator, evScaling);
@@ -249,6 +254,12 @@ void PokemonGenerator::GenMoves(DefPokemon & mon) const
 }
 
 void PokemonGenerator::GenMovesBasedOnOldMovePower(DefPokemon& mon) const {
+	//1: generiere eine diskrete verteilung andhand der angriffsst‰rken
+	// //	summe k bis m von e^-((x.xk)^2)/2sigma)
+	//2: mache eine cdf aus dieser distribution, evtl. gesmoothed
+	// // 
+	//3: mache icdf
+	//4: generiere verteilte werte, schmeiﬂe sie in die icdf, nimm den wert der rauskommt
 	double oldRating = RateMove(GameInfo::Moves[mon.move1]);
 	double oldMinRating = DefaultContext.LowestMoveRating();
 	double oldMaxRating = DefaultContext.HighestMoveRating();

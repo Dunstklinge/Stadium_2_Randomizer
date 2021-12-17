@@ -74,10 +74,10 @@ public:
 	bool bstEvIvs;
 	DiscreteDistribution statsDist;
 	static DiscreteDistribution::Scaling BstEvIvBias(DiscreteDistribution::Scaling startScaling, double bias) {
-		return startScaling.MoveByPercent(bias * 3);
+		return startScaling.MoveByPercent(bias * 1.0);
 	}
 	static DiscreteDistribution::Scaling MovePowerBias(DiscreteDistribution::Scaling startScaling, double bias) {
-		return startScaling.MoveByPercent(bias * 3);
+		return startScaling.MoveByPercent(bias * 1.0);
 	}
 
 	inline void ClearAllFilters() {

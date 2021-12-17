@@ -4,7 +4,7 @@
 
 #include "MoveTable.h"
 #include "DiscreteDistribution.h"
-
+#include "TextMods.h"
 
 class MoveGenerator
 {
@@ -12,7 +12,7 @@ public:
 	MoveGenerator();
 	~MoveGenerator();
 
-	GameInfo::Move Generate(const GameInfo::Move& from);
+	GameInfo::Move Generate(const GameInfo::Move& from, int moveId);
 
 	bool balanced;
 	bool randomType;
@@ -29,7 +29,10 @@ public:
 	bool randomEffectChance;
 	DiscreteDistribution ecDist;
 	bool randomStatusMoveEffect;
+	bool generateDescription;
+	bool preciseDescription;
 
+	TextMods textChanges;
 private:
 
 	struct AuxMaps {

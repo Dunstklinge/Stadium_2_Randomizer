@@ -501,12 +501,14 @@ void Randomizer::RandomizeMoves()
 	moveGen.randomEffectChance = m_settings->uber.moves.secEffectChance;
 	moveGen.ecDist = m_settings->uber.moves.secEffectChanceDist;
 	moveGen.randomStatusMoveEffect = m_settings->uber.moves.statusMoves;
+	moveGen.generateDescription = true;
+	moveGen.preciseDescription = false;
 
 	m_customMoves = new GameInfo::Move[_countof(GameInfo::Moves)];
 	memcpy_s(m_customMoves, sizeof(GameInfo::Moves), GameInfo::Moves, sizeof(GameInfo::Moves));
 	for (int i = 0; i < _countof(GameInfo::Moves); i++) {
 		GameInfo::Move& move = m_customMoves[i];
-		move = moveGen.Generate(move);
+		move = moveGen.Generate(move, i);
 	}
 	m_romReplacements.emplace_back(RomReplacements{ (uint8_t*)m_customMoves, sizeof(GameInfo::Moves), 0x98430 });
 
@@ -610,7 +612,6 @@ void Randomizer::RandomizeHackedRentals()
 	}
 	SetPartialProgress(0.2);
 	std::vector<unsigned> glcSets;
-	std::vector<int> glcOrder;
 	if (m_settings->rentals.multipleGlcRentals) {
 		//Generate n tables
 		for (int i = 0; i < m_settings->rentals.glcTableCount; i++) {
@@ -618,10 +619,22 @@ void Randomizer::RandomizeHackedRentals()
 		}
 		//spread them randomly
 		std::uniform_int_distribution<int> dist(0, glcSets.size()-1);
+		//but also make sure each one is used at least once
+		std::vector<bool> glcSetUsed(false, glcSets.size());
+		int nUnusedSets = glcSets.size();
 		for (int i = 8; i < 29; i++) {
-			int chosenset = glcSets[dist(Random::Generator)];
+			int chosenset;
+			if (nUnusedSets >= (29 - i)) {
+				 chosenset = std::find(glcSetUsed.begin(), glcSetUsed.end(), false) - glcSetUsed.begin();
+			}
+			else {
+				chosenset = glcSets[dist(Random::Generator)];
+			}
 			AddRentalSet(tid(i), chosenset);
-			glcOrder.push_back(chosenset);
+			if (!glcSetUsed[chosenset]) {
+				nUnusedSets--;
+				glcSetUsed[chosenset] = true;
+			}
 		}
 		AddRentalSet(tid(29),-1); //end it after rival
 	}
@@ -653,10 +666,23 @@ void Randomizer::RandomizeHackedRentals()
 			}
 			//spread them randomly
 			std::uniform_int_distribution<int> dist(0, glcSets.size()-1);
-			for (int i = 8; i < 29; i++) {
-				AddRentalSet(tid(i), glcSets[dist(Random::Generator)]);
+			//but also make sure each one is used at least once
+			std::vector<bool> glcSetUsed(false, glcSets.size());
+			int nUnusedSets = glcSets.size();
+			for (int i = 35; i < 56; i++) {
+				int chosenset;
+				if (nUnusedSets >= (29 - i)) {
+					chosenset = std::find(glcSetUsed.begin(), glcSetUsed.end(), false) - glcSetUsed.begin();
+				}
+				else {
+					chosenset = glcSets[dist(Random::Generator)];
+				}
+				AddRentalSet(tid(i), chosenset);
+				if (!glcSetUsed[chosenset]) {
+					nUnusedSets--;
+					glcSetUsed[chosenset] = true;
+				}
 			}
-			AddRentalSet(tid(29), -1); //end it after rival
 			AddRentalSet(tid(56),-1); //end it after rival
 		}
 	}
@@ -1186,7 +1212,7 @@ void Randomizer::RandomizeItems()
 			if (!m_settings->rentals.multipleGlcRentals) {
 				//only one set for all of glc
 				int chosenset = GenItemsAndAdd(nItems);
-				AddItemSet(tid(8), chosenset);
+				AddItemSet(tid(35), chosenset);
 				glcOrder.push_back(chosenset);
 			}
 			else {
@@ -1196,7 +1222,7 @@ void Randomizer::RandomizeItems()
 				}
 				//spread them randomly
 				std::uniform_int_distribution<int> dist(0, glcSets.size() - 1);
-				for (int i = 8; i < 29; i++) {
+				for (int i = 35; i < 56; i++) {
 					int chosenset = glcSets[dist(Random::Generator)];
 					AddItemSet(tid(i), chosenset);
 					glcOrder.push_back(chosenset);

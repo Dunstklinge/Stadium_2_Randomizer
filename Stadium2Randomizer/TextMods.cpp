@@ -128,7 +128,7 @@ bool  TextMods::AddChange(uint32_t textTable, uint32_t stringNumber, std::string
 	Change c;
 	c.textTable = textTable;
 	c.stringNumber = stringNumber;
-	c.replaceWith = newString;
+	c.replaceWith = std::move(newString);
 	changes.push_back(c);
 
 	return true;

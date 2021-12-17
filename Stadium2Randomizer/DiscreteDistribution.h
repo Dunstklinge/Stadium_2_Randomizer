@@ -15,7 +15,12 @@ class DiscreteDistribution
 public:
 	struct Scaling {
 		Scaling(int left, int right) : left(left), right(right + 1) {}
-		Scaling MoveByPercent(double amount) { return Scaling(left + (right-left)*amount, right + (right - left)*amount); }
+		Scaling MoveByPercent(double amount) { 
+			Scaling ret = *this;
+			ret.left = left + (right - left) * amount;
+			ret.right = right + (right - left) * amount;
+			return ret;
+		}
 	private:
 		friend class DiscreteDistribution;
 		double left;
@@ -128,30 +133,44 @@ public:
 	}
 private:
 	template<typename T>
-	int GenValueClamp(const T& func) const;
+	int GenValueClamp(T& gen, Scaling scaling, Borders borders) const;
 	template<typename T>
-	int GenValueTruncClamp(const T& func, Borders borders) const;
-	template<typename T>
-	int GenValueRetry(const T& func, int nTries = 10) const;
-	template<typename T>
-	int GenValueTruncRetry(const T& func, int nTries, Borders borders) const;
+	int GenValueRetry(T& gen, int nTries, Scaling scaling, Borders borders) const;
 
 	template<typename T>
-	int GenValue(T& gen) const;
-	template<typename T>
-	int GenValueScaled(T& gen, Scaling scaling) const;
+	int TryGenValue(T& gen, Scaling scaling, Borders borders) const;
+
+	static double NormalCdf(double x, double mean, double stddev);
+	static double NormalIcdf(double x, double mean, double stddev);
 };
 
 void to_json(nlohmann::json& j, const DiscreteDistribution& d);
 void from_json(const nlohmann::json& j, DiscreteDistribution& d);
 
 template<typename T>
-int DiscreteDistribution::GenValueScaled(T& gen, Scaling scaling) const {
+int DiscreteDistribution::TryGenValue(T& gen, Scaling scaling, Borders borders) const {
 	if (scaling.right <= scaling.left) return scaling.left;
 	switch (type) {
 	case NORMAL: {
-		std::normal_distribution<double> dist(np.mean(scaling), np.stddev(scaling));
-		double num = dist(gen);
+		double num;
+		if (edgeType == REROLL) {
+			//if we want a truncated value, we can generate them directly with a better algorithm
+			//than a redraw-until-succeed approach:
+			//inverse cdf(y) = mean + sqrt(2)*sigma *InverseErf[-1 + 2*y]
+			//nehme uniform distributed werte zwischen cdf(xMin), cdf(xMax)
+			//schmeiﬂe die in inverse cdf
+			//ergebnis sind truncated random numbers
+			double cdfMin = NormalCdf(borders.min, np.mean(scaling), np.stddev(scaling));
+			double cdfMax = NormalCdf(borders.max, np.mean(scaling), np.stddev(scaling));
+			std::uniform_real_distribution<double> udist(cdfMin, cdfMax);
+			double y = udist(gen);
+			num = NormalIcdf(y, np.mean(scaling), np.stddev(scaling));
+		}
+		else {
+			std::normal_distribution<double> dist(np.mean(scaling), np.stddev(scaling));
+			num = dist(gen);
+		}
+		
 		return int(num); }
 	case TRIANGLE: {
 		Point lhs = tp.a(scaling);
@@ -161,69 +180,63 @@ int DiscreteDistribution::GenValueScaled(T& gen, Scaling scaling) const {
 		double x[] = { lhs.x, c.x, rhs.x };
 		double y[] = { lhs.y, c.y, rhs.y };
 		std::piecewise_linear_distribution<double> dist(std::begin(x), std::end(x), std::begin(y));
-		return int(dist(Random::Generator)); }
+		return int(dist(gen)); }
 	case UNIFORM:
 	default: {
-		std::uniform_int_distribution<int> dist(defBorders.min, defBorders.max);
+		std::uniform_int_distribution<int> dist(borders.min, borders.max);
 		return dist(gen); }
 	}
 }
 
 template<typename T>
-int DiscreteDistribution::GenValue(T& gen) const {
-	return GenValueScaled(gen, defScaling);
-}
-
-template<typename T>
-int DiscreteDistribution::GenValueClamp(const T& func) const { return GenValueTruncClamp(func, defBorders); }
-template<typename T>
-int DiscreteDistribution::GenValueTruncClamp(const T& func, Borders borders) const {
+int DiscreteDistribution::GenValueClamp(T& gen, Scaling scaling, Borders borders) const {
 	if (borders.min >= borders.max) return borders.max;
-	return std::clamp(func(), borders.min, borders.max);
+	return std::clamp(TryGenValue(gen, scaling, borders), borders.min, borders.max);
 }
 template<typename T>
-int DiscreteDistribution::GenValueRetry(const T& func, int nTries) const { return GenValueTruncRetry(func, nTries, defBorders); }
-template<typename T>
-int DiscreteDistribution::GenValueTruncRetry(const T& func, int nTries, Borders borders) const {
+int DiscreteDistribution::GenValueRetry(T& gen, int nTries, Scaling scaling, Borders borders) const {
 	if (borders.min >= borders.max) return borders.max;
+	if (type == NORMAL) {
+		
+	}
 	for (int i = 0; i < nTries; i++) {
-		int v = func();
+		int v = TryGenValue(gen, scaling, borders);
 		if (borders.min <= v && v <= borders.max)
 			return v;
 	}
-	return GenValueTruncClamp(func, borders);
+	return GenValueClamp(gen, scaling, borders);
 }
 
 template<typename T>
 int DiscreteDistribution::operator()(T& gen) const
 {
 	if (edgeType == CLAMP)
-		return GenValueClamp([&]() {return GenValue(gen); });
+		return GenValueClamp(gen, defScaling, defBorders);
 	else
-		return GenValueRetry([&]() {return GenValue(gen); }, 10);
+		return GenValueRetry(gen, 10, defScaling, defBorders);
 }
 
 template<typename T>
 int DiscreteDistribution::operator()(T& gen, Borders borders) const
 {
 	if (edgeType == CLAMP)
-		return GenValueTruncClamp([&]() {return GenValue(gen); }, defBorders);
+		return GenValueClamp(gen, defScaling, borders);
 	else
-		return GenValueTruncRetry([&]() {return GenValue(gen); }, 10, defBorders);
+		return GenValueRetry(gen, 10, defScaling, borders);
 }
 
 template<typename T>
 int DiscreteDistribution::operator()(T& gen, Scaling scaling) const {
 	if (edgeType == CLAMP)
-		return GenValueClamp([&]() {return GenValueScaled(gen, scaling); });
+		return GenValueClamp(gen, scaling, defBorders);
 	else
-		return GenValueRetry([&]() {return GenValueScaled(gen, scaling); }, 10);
+		return GenValueRetry(gen, 10, scaling, defBorders);
 }
 
 template<typename T>
 int DiscreteDistribution::operator()(T& gen, Scaling scaling, Borders borders) const {
 	if (edgeType == CLAMP)
-		return GenValueTruncClamp([&]() {return GenValueScaled(gen, scaling); }, borders);
+		return GenValueClamp(gen, scaling, borders);
 	else
-		return GenValueTruncRetry([&]() {return GenValueScaled(gen, scaling); }, 10, borders);
+		return GenValueRetry(gen, 10, scaling, borders);
 }
