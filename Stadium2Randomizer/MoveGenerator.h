@@ -35,6 +35,8 @@ public:
 	TextMods textChanges;
 private:
 
+	std::string AddDescriptionNewlines(std::string descr) const;
+
 	struct AuxMaps {
 		AuxMaps();
 		std::vector<GameInfo::MoveEffect> secChanceEffects;
