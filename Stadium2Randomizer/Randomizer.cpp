@@ -746,6 +746,7 @@ void Randomizer::RandomizeTrainers()
 		return false;
 	};
 
+	//collect all trainers into trainerList
 	{
 		auto it = m_romRoster->trainerBegin() + 2;
 		auto addTrainer = [&, this](int cupId, CupRulesId crid, int round) {
@@ -809,12 +810,12 @@ void Randomizer::RandomizeTrainers()
 	auto shuffleArr = [&](std::vector<int>& ts) {
 		int size = ts.size();
 		for (int i = 0; i < size - 1; i++) {
-			int useIndex = Random::GetInt(i, size-1);
+			int shuffleIndex = Random::GetInt(i, size-1);
 			using namespace std;
-			swap(ts[i], ts[useIndex]);
-			swap(trainerList[i].def.trainerId, trainerList[useIndex].def.trainerId);
-			swap(trainerList[i].def.trainerCat, trainerList[useIndex].def.trainerCat);
-			swap(trainerList[i].def.textId, trainerList[useIndex].def.textId);
+			swap(trainerList[ts[i]].def.trainerId, trainerList[ts[shuffleIndex]].def.trainerId);
+			swap(trainerList[ts[i]].def.trainerCat, trainerList[ts[shuffleIndex]].def.trainerCat);
+			swap(trainerList[ts[i]].def.textId, trainerList[ts[shuffleIndex]].def.textId);
+			swap(ts[i], ts[shuffleIndex]);
 		}
 	};
 	shuffleArr(shuffleBosses[0]);
@@ -924,11 +925,12 @@ void Randomizer::RandomizeTrainers()
 		}
 
 		DefTrainer newDef = tgen.Generate(trainer.def);
-		if (m_settings->min1Buttons == 5)
+		if (m_settings->min1Buttons == 5) {
 			for (int i = 0; i < newDef.nPokes; i++)
 			{
 				newDef.pokemon[i].move1 = newDef.pokemon[i].move2 = newDef.pokemon[i].move3 = newDef.pokemon[i].move4 = GameInfo::METRONOME;
 			}
+		}
 
 		trainer.def = newDef;
 
