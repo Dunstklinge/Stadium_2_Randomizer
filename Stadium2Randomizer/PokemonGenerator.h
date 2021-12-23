@@ -95,6 +95,9 @@ private:
 	void GenMoves(DefPokemon& mon) const;
 	void GenItem(DefPokemon& mon) const;
 	void GenMovesBasedOnOldMovePower(DefPokemon& mon) const;
+	void GenMovesBasedOnSpeciesPower(DefPokemon& mon) const;
+
+	int PickMoveFromRating(double rating, const std::vector<GameInfo::MoveId>& moves) const;
 
 	struct Cache {
 		std::vector<GameInfo::PokemonId> species;

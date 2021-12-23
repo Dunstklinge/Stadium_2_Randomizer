@@ -9,7 +9,7 @@ public:
 	SpeciesGenerator();
 	~SpeciesGenerator();
 
-	GameInfo::Pokemon Generate(int id, const GameInfo::Pokemon& from);
+	GameInfo::Pokemon Generate(int id, const GameInfo::Pokemon& from) const;
 
 	bool randomType;
 	int gainSecondTypeChance;
@@ -27,7 +27,7 @@ public:
 	const GameInfo::Pokemon* context;
 
 private:
-	uint8_t GetRandomType();
-	uint8_t GetRandomType(uint8_t exclude);
+	uint8_t GetRandomType() const;
+	uint8_t GetRandomType(uint8_t exclude) const;
 };
 

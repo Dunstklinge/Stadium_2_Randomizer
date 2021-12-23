@@ -23,7 +23,7 @@ SpeciesGenerator::~SpeciesGenerator()
 {
 }
 
-GameInfo::Pokemon SpeciesGenerator::Generate(int id, const GameInfo::Pokemon& from)
+GameInfo::Pokemon SpeciesGenerator::Generate(int id, const GameInfo::Pokemon& from) const
 {
 	using namespace GameInfo;
 	Pokemon ret = from;
@@ -64,7 +64,6 @@ GameInfo::Pokemon SpeciesGenerator::Generate(int id, const GameInfo::Pokemon& fr
 		uint8_t Pokemon::*stats[] = { &Pokemon::baseHp, &Pokemon::baseAtk, &Pokemon::baseDef, &Pokemon::baseSpA, &Pokemon::baseSpD, &Pokemon::baseSpd };
 		int weights[6] = {};
 		int weightSum = 0;
-		statDist.SetMinMax(0, 1000);
 		for (int& weight : weights) {
 			weight = statDist(Random::Generator);
 			weightSum += weight;
@@ -87,7 +86,7 @@ GameInfo::Pokemon SpeciesGenerator::Generate(int id, const GameInfo::Pokemon& fr
 	return ret;
 }
 
-uint8_t SpeciesGenerator::GetRandomType()
+uint8_t SpeciesGenerator::GetRandomType() const
 {
 	uint8_t rand = Random::GetInt(0, 16);
 	if (rand > GameInfo::ROCK) rand += 1;
@@ -95,7 +94,7 @@ uint8_t SpeciesGenerator::GetRandomType()
 	return rand;
 }
 
-uint8_t SpeciesGenerator::GetRandomType(uint8_t exclude)
+uint8_t SpeciesGenerator::GetRandomType(uint8_t exclude) const
 {
 	uint8_t rand = Random::GetInt(0, 15);
 	if (rand >= exclude) rand++;

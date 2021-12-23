@@ -59,7 +59,18 @@ DefPokemon PokemonGenerator::Generate(GameInfo::PokemonId species) const
 	GenLevel(mon);
 	GenEvsIvs(mon);
 	GenHappiness(mon);
-	GenMoves(mon);
+	switch (moveRandMove) {
+	case EqualChance:
+	default:
+		GenMoves(mon);
+		break;
+	case BasedOnOldMovePower:
+		GenMovesBasedOnOldMovePower(mon);
+		break;
+	case BasedOnSpeciesBst:
+		GenMovesBasedOnSpeciesPower(mon);
+		break;
+	};
 	if (changeItem)
 		GenItem(mon);
 	else
@@ -80,7 +91,19 @@ DefPokemon PokemonGenerator::Generate(const DefPokemon & from) const
 		GenEvsIvs(mon);
 	if(changeHappiness)
 		GenHappiness(mon);
-	if(changeMoves)
+	if (changeMoves)
+		switch (moveRandMove) {
+		case EqualChance:
+		default:
+			GenMoves(mon);
+			break;
+		case BasedOnOldMovePower:
+			GenMovesBasedOnOldMovePower(mon);
+			break;
+		case BasedOnSpeciesBst:
+			GenMovesBasedOnSpeciesPower(mon);
+			break;
+		};
 		GenMoves(mon);
 	if (changeItem)
 		GenItem(mon);
@@ -254,32 +277,154 @@ void PokemonGenerator::GenMoves(DefPokemon & mon) const
 }
 
 void PokemonGenerator::GenMovesBasedOnOldMovePower(DefPokemon& mon) const {
-	//1: generiere eine diskrete verteilung andhand der angriffsst‰rken
-	// //	summe k bis m von e^-((x.xk)^2)/2sigma)
-	//2: mache eine cdf aus dieser distribution, evtl. gesmoothed
-	// // 
-	//3: mache icdf
-	//4: generiere verteilte werte, schmeiﬂe sie in die icdf, nimm den wert der rauskommt
 	double oldRating = RateMove(GameInfo::Moves[mon.move1]);
 	double oldMinRating = DefaultContext.LowestMoveRating();
 	double oldMaxRating = DefaultContext.HighestMoveRating();
-	double bias = ((oldRating - oldMinRating) / (oldMaxRating - oldMinRating)) * 2 - 1;
+	double bias = 1 - (((oldRating - oldMinRating) / (oldMaxRating - oldMinRating)) * 2 - 1);
 	double minRating = context.LowestMoveRating();
 	double maxRating = context.HighestMoveRating();
 	DiscreteDistribution::Scaling pwrScaling = MovePowerBias({ int(minRating), int(maxRating) }, bias);
 
 	RefreshMoves(mon.species);
+
 	std::sort(cache.moves.begin(), cache.moves.end(), [&](GameInfo::MoveId lhs, GameInfo::MoveId rhs) {
 		return RateMove(context.moveList[lhs]) < RateMove(context.moveList[rhs]); 
 	});
+
+	mon.move1 = mon.move2 = mon.move3 = mon.move4 = (GameInfo::MoveId)0;
+
 	if (minOneMoveFilter) {
 		RefreshMin1Moves(mon.species);
 		if (cache.min1Moves.size() > 0) {
 			double power = movePowerDist(Random::Generator, pwrScaling);
-			//TODO
-			//mon.move1 = cache.min1Moves[dist(Random::Generator)];
+			int index = PickMoveFromRating(power, cache.min1Moves);
+			mon.move1 = cache.min1Moves[index];
+			//remove it from regular moves too. we dont know the index,
+			//so we have to track it when making the min1moves array...
+			//... or just search for it. thats slow? too bad!
+			auto it = std::find(cache.moves.begin(), cache.moves.end(), mon.move1);
+			if (it != cache.moves.end()) cache.moves.erase(it);
 		}
 	}
+	if (mon.move1 == 0) {
+		if (cache.moves.size() > 0) {
+			double power = movePowerDist(Random::Generator, pwrScaling);
+			int index = PickMoveFromRating(power, cache.moves);
+			mon.move1 = cache.moves[index];
+			cache.moves.erase(cache.moves.begin() + index);
+		}
+	}
+
+	if (cache.moves.size() < 1) return;
+	double power = movePowerDist(Random::Generator, pwrScaling);
+	int index = PickMoveFromRating(power, cache.moves);
+	mon.move2 = cache.moves[index];
+	cache.moves.erase(cache.moves.begin() + index);
+	
+	if (cache.moves.size() < 1) return;
+	power = movePowerDist(Random::Generator, pwrScaling);
+	index = PickMoveFromRating(power, cache.moves);
+	mon.move3 = cache.moves[index];
+	cache.moves.erase(cache.moves.begin() + index);
+	
+	if (cache.moves.size() < 1) return;
+	power = movePowerDist(Random::Generator, pwrScaling);
+	index = PickMoveFromRating(power, cache.moves);
+	mon.move4 = cache.moves[index];
+	cache.moves.erase(cache.moves.begin() + index);
+}
+
+void PokemonGenerator::GenMovesBasedOnSpeciesPower(DefPokemon& mon) const {
+	double oldRating = GameInfo::Pokemons[mon.species].CalcBST();
+	double oldMinRating = DefaultContext.LowestBst();
+	double oldMaxRating = DefaultContext.HighestBst();
+	double bias = 1 - (((oldRating - oldMinRating) / (oldMaxRating - oldMinRating)) * 2 - 1);
+	double minRating = context.LowestMoveRating();
+	double maxRating = context.HighestMoveRating();
+	DiscreteDistribution::Scaling pwrScaling = MovePowerBias({ int(minRating), int(maxRating) }, bias);
+
+	RefreshMoves(mon.species);
+
+	std::sort(cache.moves.begin(), cache.moves.end(), [&](GameInfo::MoveId lhs, GameInfo::MoveId rhs) {
+		return RateMove(context.moveList[lhs]) < RateMove(context.moveList[rhs]);
+		});
+
+	mon.move1 = mon.move2 = mon.move3 = mon.move4 = (GameInfo::MoveId)0;
+
+	if (minOneMoveFilter) {
+		RefreshMin1Moves(mon.species);
+		if (cache.min1Moves.size() > 0) {
+			double power = movePowerDist(Random::Generator, pwrScaling);
+			int index = PickMoveFromRating(power, cache.min1Moves);
+			mon.move1 = cache.min1Moves[index];
+			//remove it from regular moves too. we dont know the index,
+			//so we have to track it when making the min1moves array...
+			//... or just search for it. thats slow? too bad!
+			auto it = std::find(cache.moves.begin(), cache.moves.end(), mon.move1);
+			if (it != cache.moves.end()) cache.moves.erase(it);
+		}
+	}
+	if (mon.move1 == 0) {
+		if (cache.moves.size() > 0) {
+			double power = movePowerDist(Random::Generator, pwrScaling);
+			int index = PickMoveFromRating(power, cache.moves);
+			mon.move1 = cache.moves[index];
+			cache.moves.erase(cache.moves.begin() + index);
+		}
+	}
+
+	if (cache.moves.size() < 1) return;
+	double power = movePowerDist(Random::Generator, pwrScaling);
+	int index = PickMoveFromRating(power, cache.moves);
+	mon.move2 = cache.moves[index];
+	cache.moves.erase(cache.moves.begin() + index);
+
+	if (cache.moves.size() < 1) return;
+	power = movePowerDist(Random::Generator, pwrScaling);
+	index = PickMoveFromRating(power, cache.moves);
+	mon.move3 = cache.moves[index];
+	cache.moves.erase(cache.moves.begin() + index);
+
+	if (cache.moves.size() < 1) return;
+	power = movePowerDist(Random::Generator, pwrScaling);
+	index = PickMoveFromRating(power, cache.moves);
+	mon.move4 = cache.moves[index];
+	cache.moves.erase(cache.moves.begin() + index);
+}
+
+int PokemonGenerator::PickMoveFromRating(double rating, const std::vector<GameInfo::MoveId>& moves) const {
+	//we have one big problem: if we simply take the closest element, then some elements will counterintuitively almost
+	//never be chosen, if they are surrounded by moves with almost the same rating (or never if they have the exact same).
+	//however, if we put dont do that, we risk violating the given rating distribution.
+	//until i find a good solution, heres the plan for now: make a small delta round the rating, pick a uniform random element from the delta.
+	const double delta = 10;
+	int start, end;
+	int closest = 0; double closestRating = RateMove(context.moveList[moves[0]]);
+	for (start = 0; start < moves.size(); start++) {
+		double moveRating = RateMove(context.moveList[moves[start]]);
+		if (std::abs(moveRating - rating) < std::abs(closestRating - rating)) {
+			closest = start;
+			closestRating = moveRating;
+		}
+		if (moveRating > rating-delta) break;
+	}
+	for (end = start; end < moves.size(); end++) {
+		double moveRating = RateMove(context.moveList[moves[end]]);
+		if (std::abs(moveRating - rating) < std::abs(closestRating - rating)) {
+			closest = end;
+			closestRating = moveRating;
+		}
+		if (moveRating > rating - delta) break;
+	}
+	if (end - start == 1) {
+		return start;
+	}
+	else if (end - start <= 0) {
+		//pick closest instead
+		return closest;
+	}
+	std::uniform_int_distribution<int> dist(start, end - 1);
+	return dist(Random::Generator);
 }
 
 void PokemonGenerator::GenItem(DefPokemon & mon) const

@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <numeric>
 
 #include "CMainDialog.h"
 #include "Crc.h"
@@ -547,6 +548,8 @@ void Randomizer::RandomizeHackedRentals()
 	pokeGen.statsDist = m_settings->rentals.randRelEvIvDist;
 	pokeGen.levelDist = m_settings->rentals.randLevelsDist;
 	pokeGen.changeHappiness = m_settings->rentals.randRentalHappiness;
+	pokeGen.moveRandMove = m_settings->rentals.randMovesBalanced ? PokemonGenerator::EqualChance : PokemonGenerator::BasedOnSpeciesBst;
+	pokeGen.statsDist = m_settings->rentals.randRelMovesBalancedDist;
 
 	{
 		using namespace std::placeholders;
@@ -623,24 +626,15 @@ void Randomizer::RandomizeHackedRentals()
 		for (int i = 0; i < m_settings->rentals.glcTableCount; i++) {
 			glcSets.push_back(GenRentalSetAndAdd(GLC));
 		}
-		//spread them randomly
-		std::uniform_int_distribution<int> dist(0, glcSets.size()-1);
-		//but also make sure each one is used at least once
-		std::vector<bool> glcSetUsed(glcSets.size(), false);
+		//we want to spread them evenly, so we randomize the order of gym leader fights
+		//and assign them sequentially (instead of the other way around)
+		int glcFights[29-8];
+		std::iota(std::begin(glcFights), std::end(glcFights), 8);
+		std::shuffle(std::begin(glcFights), std::end(glcFights), Random::Generator);
 		int nUnusedSets = glcSets.size();
-		for (int i = 8; i < 29; i++) {
-			int setNr;
-			if (nUnusedSets >= (29 - i)) {
-				setNr = std::find(glcSetUsed.begin(), glcSetUsed.end(), false) - glcSetUsed.begin();
-			}
-			else {
-				setNr = dist(Random::Generator);
-			}
-			AddRentalSet(tid(i), glcSets[setNr]);
-			if (!glcSetUsed[setNr]) {
-				nUnusedSets--;
-				glcSetUsed[setNr] = true;
-			}
+		int setIt = 0;
+		for (int i = 8; i < 29; i++, setIt = ++setIt % glcSets.size()) {
+			AddRentalSet(tid(i), glcSets[setIt]);
 		}
 		AddRentalSet(tid(29),-1); //end it after rival
 	}
@@ -670,24 +664,15 @@ void Randomizer::RandomizeHackedRentals()
 			for (int i = 0; i < m_settings->rentals.glcTableCount; i++) {
 				glcSets.push_back(GenRentalSetAndAdd(GLC));
 			}
-			//spread them randomly
-			std::uniform_int_distribution<int> dist(0, glcSets.size()-1);
-			//but also make sure each one is used at least once
-			std::vector<bool> glcSetUsed(glcSets.size(), false);
+			//we want to spread them evenly, so we randomize the order of gym leader fights
+			//and assign them sequentially (instead of the other way around)
+			int glcFights[56 - 35];
+			std::iota(std::begin(glcFights), std::end(glcFights), 8);
+			std::shuffle(std::begin(glcFights), std::end(glcFights), Random::Generator);
 			int nUnusedSets = glcSets.size();
-			for (int i = 35; i < 56; i++) {
-				int setNr;
-				if (nUnusedSets >= (56 - i)) {
-					setNr = std::find(glcSetUsed.begin(), glcSetUsed.end(), false) - glcSetUsed.begin();
-				}
-				else {
-					setNr = dist(Random::Generator);
-				}
-				AddRentalSet(tid(i), glcSets[setNr]);
-				if (!glcSetUsed[setNr]) {
-					nUnusedSets--;
-					glcSetUsed[setNr] = true;
-				}
+			int setIt = 0;
+			for (int i = 35; i < 56; i++, setIt = ++setIt % glcSets.size()) {
+				AddRentalSet(tid(i), glcSets[setIt]);
 			}
 			AddRentalSet(tid(56),-1); //end it after rival
 		}
@@ -858,6 +843,18 @@ void Randomizer::RandomizeTrainers()
 	tgen.gen.changeHappiness = m_settings->trainerMons.trainerRandHappiness;
 	tgen.gen.changeItem = m_settings->trainerMons.trainerRandItems;
 	tgen.gen.levelDist = m_settings->rentals.randLevelsDist;
+	if (m_settings->trainerMons.trainerRandMovesDetails == 1) {
+		tgen.gen.moveRandMove = PokemonGenerator::EqualChance;
+	}
+	else if (m_settings->trainerMons.trainerRandMovesDetails == 2) {
+		tgen.gen.moveRandMove = PokemonGenerator::BasedOnSpeciesBst;
+		tgen.gen.movePowerDist = m_settings->trainerMons.trainerRandRelMovesDetailsDist;
+	}
+	else {
+		tgen.gen.moveRandMove = PokemonGenerator::BasedOnOldMovePower;
+		tgen.gen.movePowerDist = m_settings->trainerMons.trainerRandRelMovesDetailsDist;
+	}
+	
 	tgen.stayCloseToBST = m_settings->trainerMons.stayCloseToBST;
 	tgen.stayCloseToBSTThreshold = 30;
 
