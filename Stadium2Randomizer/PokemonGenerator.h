@@ -38,7 +38,7 @@ public:
 		unsigned bufferN = 0;
 
 		explicit operator bool() const {
-			return func == nullptr && (buffer == nullptr || bufferN == 0);
+			return func != nullptr || (buffer != nullptr && bufferN >= 0);
 		}
 	};
 	template<>
@@ -48,7 +48,7 @@ public:
 		unsigned bufferN = 0;
 
 		explicit operator bool() const {
-			return func == nullptr && (buffer == nullptr || bufferN == 0);
+			return func != nullptr || (buffer != nullptr && bufferN >= 0);
 		}
 	};
 	

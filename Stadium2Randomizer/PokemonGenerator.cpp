@@ -126,7 +126,7 @@ void PokemonGenerator::Refresh(GameInfo::PokemonId species, const Filter<T>& fil
 	{
 		cache.erase(std::remove_if(cache.begin(), cache.end(),
 			[&](T id) { return !filter.func(id, species); }
-		));
+		), cache.end());
 	}
 }
 
@@ -195,38 +195,42 @@ void PokemonGenerator::GenEvsIvs(DefPokemon & mon) const
 	unsigned int maxIv = 15;
 
 	if (bstEvIvs) {
-		unsigned bst = context.pokeList[mon.species].CalcBST();
+		unsigned bst = context.Poke(mon.species).CalcBST();
 		//cap at 5% and 95% respectivelz
 		unsigned minBst = context.LowestBst() + (context.HighestBst() - context.LowestBst()) * 0.05;
 		unsigned maxBst = context.HighestBst() - (context.HighestBst() - context.LowestBst()) * 0.05;
 		
 		//create bias that is -1 at minBst and +1 at maxBst
 		SatUAr shiftedBst = std::clamp(bst, minBst, maxBst) - minBst;
-		double bstPercent = shiftedBst / double(maxBst);
+		double bstPercent = shiftedBst / double(maxBst - minBst);
 		double bias = ((0.5 - bstPercent) * 2); //where -1 is strongest leftshift and +1 is strongest rightshift
 		DiscreteDistribution::Scaling evScaling = BstEvIvBias({ int(minEv), int(maxEv) }, bias);
-		mon.evHp = statsDist(Random::Generator, evScaling);
-		mon.evAtk = statsDist(Random::Generator, evScaling);
-		mon.evDef = statsDist(Random::Generator, evScaling);
-		mon.evSpd = statsDist(Random::Generator, evScaling);
-		mon.evSpc = statsDist(Random::Generator, evScaling);
+		DiscreteDistribution::Borders evBorders = { 0, 65535 };
+		mon.evHp = statsDist(Random::Generator, evScaling, evBorders);
+		mon.evAtk = statsDist(Random::Generator, evScaling, evBorders);
+		mon.evDef = statsDist(Random::Generator, evScaling, evBorders);
+		mon.evSpd = statsDist(Random::Generator, evScaling, evBorders);
+		mon.evSpc = statsDist(Random::Generator, evScaling, evBorders);
 
 		DiscreteDistribution::Scaling dvScaling = BstEvIvBias({ int(minIv), int(maxIv) }, bias);
+		DiscreteDistribution::Borders dvBorders = { 0, 15 };
 		int dvs[4];
-		for (int i = 0; i < 4; i++) dvs[i] = statsDist(Random::Generator, evScaling);
+		for (int i = 0; i < 4; i++) dvs[i] = statsDist(Random::Generator, dvScaling, dvBorders);
 		mon.dvs = dvs[0] | (dvs[1] << 4) | (dvs[2] << 8) | (dvs[3] << 12);
 	}
 	else {
 		DiscreteDistribution::Scaling evScaling { int(minEv), int(maxEv) };
-		mon.evHp = statsDist(Random::Generator, evScaling);
-		mon.evAtk = statsDist(Random::Generator, evScaling);
-		mon.evDef = statsDist(Random::Generator, evScaling);
-		mon.evSpd = statsDist(Random::Generator, evScaling);
-		mon.evSpc = statsDist(Random::Generator, evScaling);
+		DiscreteDistribution::Borders evBorders = { 0, 65535 };
+		mon.evHp = statsDist(Random::Generator, evScaling, evBorders);
+		mon.evAtk = statsDist(Random::Generator, evScaling, evBorders);
+		mon.evDef = statsDist(Random::Generator, evScaling, evBorders);
+		mon.evSpd = statsDist(Random::Generator, evScaling, evBorders);
+		mon.evSpc = statsDist(Random::Generator, evScaling, evBorders);
 
 		DiscreteDistribution::Scaling dvScaling{ int(minIv), int(maxIv) };
+		DiscreteDistribution::Borders dvBorders = { 0, 15 };
 		int dvs[4];
-		for (int i = 0; i < 4; i++) dvs[i] = statsDist(Random::Generator, evScaling);
+		for (int i = 0; i < 4; i++) dvs[i] = statsDist(Random::Generator, dvScaling, dvBorders);
 		mon.dvs = dvs[0] | (dvs[1] << 4) | (dvs[2] << 8) | (dvs[3] << 12);
 	}
 
@@ -277,10 +281,10 @@ void PokemonGenerator::GenMoves(DefPokemon & mon) const
 }
 
 void PokemonGenerator::GenMovesBasedOnOldMovePower(DefPokemon& mon) const {
-	double oldRating = RateMove(GameInfo::Moves[mon.move1]);
+	double oldRating = RateMove(DefaultContext.Move(mon.move1));
 	double oldMinRating = DefaultContext.LowestMoveRating();
 	double oldMaxRating = DefaultContext.HighestMoveRating();
-	double bias = 1 - (((oldRating - oldMinRating) / (oldMaxRating - oldMinRating)) * 2 - 1);
+	double bias = -(((oldRating - oldMinRating) / (oldMaxRating - oldMinRating)) * 2 - 1);
 	double minRating = context.LowestMoveRating();
 	double maxRating = context.HighestMoveRating();
 	DiscreteDistribution::Scaling pwrScaling = MovePowerBias({ int(minRating), int(maxRating) }, bias);
@@ -288,7 +292,7 @@ void PokemonGenerator::GenMovesBasedOnOldMovePower(DefPokemon& mon) const {
 	RefreshMoves(mon.species);
 
 	std::sort(cache.moves.begin(), cache.moves.end(), [&](GameInfo::MoveId lhs, GameInfo::MoveId rhs) {
-		return RateMove(context.moveList[lhs]) < RateMove(context.moveList[rhs]); 
+		return RateMove(context.Move(lhs)) < RateMove(context.Move(rhs));
 	});
 
 	mon.move1 = mon.move2 = mon.move3 = mon.move4 = (GameInfo::MoveId)0;
@@ -335,10 +339,10 @@ void PokemonGenerator::GenMovesBasedOnOldMovePower(DefPokemon& mon) const {
 }
 
 void PokemonGenerator::GenMovesBasedOnSpeciesPower(DefPokemon& mon) const {
-	double oldRating = GameInfo::Pokemons[mon.species].CalcBST();
+	double oldRating = DefaultContext.Poke(mon.species).CalcBST();
 	double oldMinRating = DefaultContext.LowestBst();
 	double oldMaxRating = DefaultContext.HighestBst();
-	double bias = 1 - (((oldRating - oldMinRating) / (oldMaxRating - oldMinRating)) * 2 - 1);
+	double bias = -(((oldRating - oldMinRating) / (oldMaxRating - oldMinRating)) * 2 - 1);
 	double minRating = context.LowestMoveRating();
 	double maxRating = context.HighestMoveRating();
 	DiscreteDistribution::Scaling pwrScaling = MovePowerBias({ int(minRating), int(maxRating) }, bias);
@@ -346,7 +350,7 @@ void PokemonGenerator::GenMovesBasedOnSpeciesPower(DefPokemon& mon) const {
 	RefreshMoves(mon.species);
 
 	std::sort(cache.moves.begin(), cache.moves.end(), [&](GameInfo::MoveId lhs, GameInfo::MoveId rhs) {
-		return RateMove(context.moveList[lhs]) < RateMove(context.moveList[rhs]);
+		return RateMove(context.Move(lhs)) < RateMove(context.Move(rhs));
 		});
 
 	mon.move1 = mon.move2 = mon.move3 = mon.move4 = (GameInfo::MoveId)0;
@@ -399,9 +403,9 @@ int PokemonGenerator::PickMoveFromRating(double rating, const std::vector<GameIn
 	//until i find a good solution, heres the plan for now: make a small delta round the rating, pick a uniform random element from the delta.
 	const double delta = 10;
 	int start, end;
-	int closest = 0; double closestRating = RateMove(context.moveList[moves[0]]);
+	int closest = 0; double closestRating = RateMove(context.Move(moves[0]));
 	for (start = 0; start < moves.size(); start++) {
-		double moveRating = RateMove(context.moveList[moves[start]]);
+		double moveRating = RateMove(context.Move(moves[start]));
 		if (std::abs(moveRating - rating) < std::abs(closestRating - rating)) {
 			closest = start;
 			closestRating = moveRating;
@@ -409,7 +413,7 @@ int PokemonGenerator::PickMoveFromRating(double rating, const std::vector<GameIn
 		if (moveRating > rating-delta) break;
 	}
 	for (end = start; end < moves.size(); end++) {
-		double moveRating = RateMove(context.moveList[moves[end]]);
+		double moveRating = RateMove(context.Move(moves[end]));
 		if (std::abs(moveRating - rating) < std::abs(closestRating - rating)) {
 			closest = end;
 			closestRating = moveRating;

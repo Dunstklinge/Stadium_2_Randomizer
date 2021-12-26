@@ -14,6 +14,8 @@
 #include "CustomRosterInfo.h"
 #include "CustomTrainerDefs.h"
 #include "RandomizationParams.h"
+#include "GameContext.h"
+#include "PokemonGenerator.h"
 
 class Randomizer
 {
@@ -67,6 +69,7 @@ private:
 
 	DefRoster* m_romRoster;
 	DefText* m_romText;
+	GameContext m_randContext;
 
 	//
 	//generated data
@@ -132,6 +135,8 @@ private:
 	void SortInjectedData();
 
 	void AddRival2Pokemon(DefTrainer& trainer);
+	PokemonGenerator::Filter<GameInfo::MoveId>
+		CreateMin1MoveFilter() const;
 
 	void SetProgress(double percent);
 	double m_progressPartMinPercent, m_progressPartMaxPercent;

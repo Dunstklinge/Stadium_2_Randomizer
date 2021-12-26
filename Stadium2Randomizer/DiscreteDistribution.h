@@ -164,7 +164,13 @@ int DiscreteDistribution::TryGenValue(T& gen, Scaling scaling, Borders borders) 
 			double cdfMax = NormalCdf(borders.max, np.mean(scaling), np.stddev(scaling));
 			std::uniform_real_distribution<double> udist(cdfMin, cdfMax);
 			double y = udist(gen);
-			num = NormalIcdf(y, np.mean(scaling), np.stddev(scaling));
+			//note that icdf(1) is infinity and thus would break here
+			if (y >= 1) {
+				num = borders.min;
+			}
+			else {
+				num = NormalIcdf(y, np.mean(scaling), np.stddev(scaling));
+			}
 		}
 		else {
 			std::normal_distribution<double> dist(np.mean(scaling), np.stddev(scaling));

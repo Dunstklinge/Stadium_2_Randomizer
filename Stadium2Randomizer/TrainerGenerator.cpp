@@ -45,13 +45,13 @@ DefTrainer TrainerGenerator::Generate(const DefTrainer & from)
 	if (usefulItem) {		
 		gen.itemFilter = {
 			[&](GameInfo::ItemId iid, GameInfo::PokemonId pid) {
-				auto itemInfo = context.itemList[iid];
+				auto itemInfo = context.Item(iid);
 				if (itemInfo.category & GameInfo::Item::SpeciesItem) {
 					return itemInfo.enhancedSpecies == pid;
 				}
 				if (itemInfo.category & GameInfo::Item::TypeItem) {
-					return itemInfo.enhancedType == context.pokeList[pid].type1
-						|| itemInfo.enhancedType == context.pokeList[pid].type2;
+					return itemInfo.enhancedType == context.Poke(pid).type1
+						|| itemInfo.enhancedType == context.Poke(pid).type2;
 				}
 				return true;
 			},
@@ -92,7 +92,7 @@ DefTrainer TrainerGenerator::Generate(const DefTrainer & from)
 
 			//to prevent doubles, we generate a viable pokemon array manually from both their buffer and our filter
 			//and ignore previous pokemon
-			SatUAr oldBst = GameInfo::Pokemons[ret.pokemon[i].species - 1].CalcBST(); //Note: itentionally take the ORIGINAL pokemon info here
+			SatUAr oldBst = DefaultContext.Poke(ret.pokemon[i].species).CalcBST(); //Note: itentionally take the ORIGINAL pokemon info here
 			unsigned int minBst = oldBst - stayCloseToBSTThreshold;
 			unsigned int maxBst = oldBst + stayCloseToBSTThreshold;
 			
@@ -100,7 +100,7 @@ DefTrainer TrainerGenerator::Generate(const DefTrainer & from)
 
 			gen.speciesFilter.func = [&](GameInfo::PokemonId pid) {
 				if (oldFilterFunc && !oldFilterFunc(pid)) return false;
-				if (stayCloseToBST && !FilterPokemonByBST(pid, minBst, maxBst)) return false;
+				if (stayCloseToBST && !FilterPokemonByBST(pid, minBst, maxBst, context)) return false;
 				for (int k = 0; k < i; k++) {
 					if (ret.pokemon[k].species == pid) {
 						return false;

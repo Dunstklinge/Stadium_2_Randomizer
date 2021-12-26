@@ -1,26 +1,26 @@
 #include "Filters.h"
 
-bool FilterPokemonByBST(GameInfo::PokemonId mon, unsigned int minBST, unsigned int maxBST)
+bool FilterPokemonByBST(GameInfo::PokemonId mon, unsigned int minBST, unsigned int maxBST, const GameContext& context)
 {
-	unsigned int bst = GameInfo::Pokemons[mon-1].CalcBST();
+	unsigned int bst = context.Poke(mon).CalcBST();
 	return minBST <= bst && bst <= maxBST;
 }
 
-bool FilterMoveByBP(GameInfo::MoveId mov, unsigned int minBP, unsigned int maxBP)
+bool FilterMoveByBP(GameInfo::MoveId mov, unsigned int minBP, unsigned int maxBP, const GameContext& context)
 {
-	unsigned int bp = GameInfo::Moves[mov-1].basePower;
+	unsigned int bp = context.Move(mov).basePower;
 	return minBP <= bp && bp <= maxBP;
 }
 
-bool FilterMoveByStab(GameInfo::MoveId mov, GameInfo::PokemonId mon)
+bool FilterMoveByStab(GameInfo::MoveId mov, GameInfo::PokemonId mon, const GameContext& context)
 {
-	const GameInfo::Pokemon& monDef = GameInfo::Pokemons[mon-1];
-	const GameInfo::Move& moveDef = GameInfo::Moves[mov-1];
+	const GameInfo::Pokemon& monDef = context.Poke(mon);
+	const GameInfo::Move& moveDef = context.Move(mov);
 	return moveDef.basePower > 0 && (monDef.type1 == moveDef.type || monDef.type2 == moveDef.type);
 }
 
 
-bool FilterOutLittlecupMoves(GameInfo::MoveId move, GameInfo::PokemonId mon)
+bool FilterOutLittlecupMoves(GameInfo::MoveId move, GameInfo::PokemonId mon, const GameContext& context)
 {
 	return move != GameInfo::DRAGON_RAGE && move != GameInfo::SONICBOOM;
 }

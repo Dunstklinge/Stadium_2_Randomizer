@@ -1,14 +1,13 @@
 #pragma once
 
 #include "Tables.h"
+#include "GameContext.h"
 
+bool FilterPokemonByBST(GameInfo::PokemonId mon, unsigned int minBST, unsigned int maxBST, const GameContext& context);
 
-
-bool FilterPokemonByBST(GameInfo::PokemonId mon, unsigned int minBST, unsigned int maxBST);
-
-bool FilterMoveByBP(GameInfo::MoveId, unsigned int minBP, unsigned int maxBP);
-bool FilterMoveByStab(GameInfo::MoveId, GameInfo::PokemonId);
-bool FilterOutLittlecupMoves(GameInfo::MoveId, GameInfo::PokemonId);
+bool FilterMoveByBP(GameInfo::MoveId, unsigned int minBP, unsigned int maxBP, const GameContext& context);
+bool FilterMoveByStab(GameInfo::MoveId, GameInfo::PokemonId, const GameContext& context);
+bool FilterOutLittlecupMoves(GameInfo::MoveId, GameInfo::PokemonId, const GameContext& context);
 
 bool FilterMetronomeOnly(GameInfo::MoveId);
 bool FilterLegalMovesOnly(GameInfo::MoveId, GameInfo::PokemonId);

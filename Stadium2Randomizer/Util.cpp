@@ -8,6 +8,7 @@
 #include "DefText.h"
 #include "DefRoster.h"
 #include "Tables.h"
+#include "GameContext.h"
 
 static void PrintPokemon(DefPokemon& poke, std::ofstream& out) {
 	int species = poke.species;
@@ -77,7 +78,7 @@ void PrintAllNicknames(DefRoster* roster, DefText* text)
 	std::ofstream out("nicknames.txt");
 
 	for (auto& p : monMap) {
-		const GameInfo::Pokemon& species = GameInfo::Pokemons[p.first - 1];
+		const GameInfo::Pokemon& species = DefaultContext.Poke(p.first);
 		out << p.first << "::" << GameInfo::PokemonNames[p.first] << "\n";
 		for (auto str : p.second) {
 			out << str << "\n";
@@ -109,7 +110,6 @@ void PrintAllTrainerNames(DefRoster* roster, DefText* text)
 	std::ofstream out("trainerNames.txt");
 
 	for (auto& p : monMap) {
-		const GameInfo::Pokemon& species = GameInfo::Pokemons[p.first - 1];
 		out << p.first << "::" << GameInfo::TrainerCatNames[p.first] << "\n";
 		for (auto str : p.second) {
 			out << str << "\n";

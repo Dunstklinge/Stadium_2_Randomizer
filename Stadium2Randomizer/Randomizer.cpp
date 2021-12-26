@@ -19,7 +19,7 @@
 #include "DefFaces.h"
 
 
-Randomizer::Randomizer(const RandomizationParams& settings)
+Randomizer::Randomizer(const RandomizationParams& settings) : m_randContext(DefaultContext)
 {
 	m_settings = &settings;
 	m_romRoster = nullptr;
@@ -328,7 +328,10 @@ Randomizer::CupRules Randomizer::GenerateCupRules()
 	int glcLevel = m_settings->rentals.changeGlcRentalLevel ? m_settings->rentals.seperateGlcRentalsLevel : 100;
 	return CupRules {
 		CupRule{50, 55, 155, nullptr, PokecupLegalMons, _countof(PokecupLegalMons)},
-		CupRule{5, 5, 999, &FilterOutLittlecupMoves, LittlecupLegalMons, _countof(LittlecupLegalMons)},
+		CupRule{5, 5, 999, 
+			[this](GameInfo::MoveId move, GameInfo::PokemonId mon) { return FilterOutLittlecupMoves(move, mon, m_randContext); },
+			LittlecupLegalMons, _countof(LittlecupLegalMons)
+		},
 		CupRule{m_settings->rentals.randPrimecupLevels ? primecupLevel : 100, 100, 999},  //poke, little, prime/gym
 
 		CupRule{30,30,999, nullptr, ChallengecupLegalMonsPokeball, _countof(ChallengecupLegalMonsPokeball)}, //challenge cup 1,2,3,4
@@ -349,7 +352,7 @@ void Randomizer::RandomizeRegularRentals()
 	3: Poke Cup, offset 3B20 (#15136)
 	4: Poke Cup again (same exact table, referenced twice - maybe this was supposed to be Poke Cup r2?)*/
 	auto rentalIt = m_romRoster->rentalBegin();
-	PokemonGenerator pokeGen;
+	PokemonGenerator pokeGen(m_randContext);
 	pokeGen.changeSpecies = false;
 	pokeGen.changeEvsIvs = m_settings->rentals.randEvIv;
 	pokeGen.changeLevel = m_settings->rentals.randLevels;
@@ -361,19 +364,16 @@ void Randomizer::RandomizeRegularRentals()
 	pokeGen.bstEvIvs = m_settings->rentals.rentalSpeciesEvIv;
 	pokeGen.statsDist = m_settings->rentals.randRelEvIvDist;
 	pokeGen.levelDist = m_settings->rentals.randLevelsDist;
-	pokeGen.changeHappiness = m_settings->rentals.randRentalHappiness;
-
-	{
-		using namespace std::placeholders;
-		std::function<bool(GameInfo::MoveId, GameInfo::PokemonId)> minMoveFilter;
-		if (m_settings->min1Buttons == 1) minMoveFilter = std::bind(&FilterMoveByBP, _1, 1, 999);
-		else if (m_settings->min1Buttons == 2) minMoveFilter = std::bind(&FilterMoveByBP, _1, 75, 999);
-		else if (m_settings->min1Buttons == 3) minMoveFilter = &FilterMoveByStab;
-		else if (m_settings->min1Buttons == 4) minMoveFilter =
-			std::bind(std::logical_and<bool>(), std::bind(&FilterMoveByBP, _1, 75, 999), std::bind(&FilterMoveByStab, _1, _2));
-		else minMoveFilter = nullptr;
-		pokeGen.minOneMoveFilter = { minMoveFilter, nullptr, 0 };
+	if (m_settings->rentals.randMovesBalanced) {
+		pokeGen.moveRandMove = PokemonGenerator::BasedOnSpeciesBst;
+		pokeGen.movePowerDist = m_settings->rentals.randRelMovesBalancedDist;
 	}
+	else {
+		pokeGen.moveRandMove = PokemonGenerator::EqualChance;
+	}
+	pokeGen.changeHappiness = m_settings->rentals.randRentalHappiness;
+	pokeGen.minOneMoveFilter = CreateMin1MoveFilter();
+	
 	auto randomizeRentals = [&](int cupIndex) {
 		for (int i = 0; i < rentalIt[cupIndex].nPokemon; i++) {
 			DefPokemon newMon = pokeGen.Generate(rentalIt[cupIndex].pokemon[i]);
@@ -535,7 +535,7 @@ void Randomizer::RandomizeHackedRentals()
 {
 	if (!m_settings->rentals.moreRentalTables) return;
 
-	PokemonGenerator pokeGen;
+	PokemonGenerator pokeGen(m_randContext);
 	pokeGen.changeSpecies = false;
 	pokeGen.changeEvsIvs = true;
 	pokeGen.changeLevel = true;
@@ -548,20 +548,14 @@ void Randomizer::RandomizeHackedRentals()
 	pokeGen.statsDist = m_settings->rentals.randRelEvIvDist;
 	pokeGen.levelDist = m_settings->rentals.randLevelsDist;
 	pokeGen.changeHappiness = m_settings->rentals.randRentalHappiness;
-	pokeGen.moveRandMove = m_settings->rentals.randMovesBalanced ? PokemonGenerator::EqualChance : PokemonGenerator::BasedOnSpeciesBst;
-	pokeGen.statsDist = m_settings->rentals.randRelMovesBalancedDist;
-
-	{
-		using namespace std::placeholders;
-		std::function<bool(GameInfo::MoveId, GameInfo::PokemonId)> minMoveFilter;
-		if (m_settings->min1Buttons == 1) minMoveFilter = std::bind(&FilterMoveByBP, _1, 1, 999);
-		else if (m_settings->min1Buttons == 2) minMoveFilter = std::bind(&FilterMoveByBP, _1, 75, 999);
-		else if (m_settings->min1Buttons == 3) minMoveFilter = &FilterMoveByStab;
-		else if (m_settings->min1Buttons == 4) minMoveFilter =
-			std::bind(std::logical_and<bool>(), std::bind(&FilterMoveByBP, _1, 75, 999), std::bind(&FilterMoveByStab, _1, _2));
-		else minMoveFilter = nullptr;
-		pokeGen.minOneMoveFilter = { minMoveFilter, nullptr, 0 };
+	if (m_settings->rentals.randMovesBalanced) {
+		pokeGen.moveRandMove = PokemonGenerator::BasedOnSpeciesBst;
+		pokeGen.movePowerDist = m_settings->rentals.randRelMovesBalancedDist;
 	}
+	else {
+		pokeGen.moveRandMove = PokemonGenerator::EqualChance;
+	}
+	pokeGen.minOneMoveFilter = CreateMin1MoveFilter();
 
 	if (m_settings->legalMovesOnly)
 		pokeGen.generalMoveFilter = { FilterLegalMovesOnly, nullptr, 0 };
@@ -815,19 +809,8 @@ void Randomizer::RandomizeTrainers()
 	//
 	// set up trainer generator
 	//
-	TrainerGenerator tgen;
-	{
-		using namespace std::placeholders;
-		std::function<bool(GameInfo::MoveId, GameInfo::PokemonId)> minMoveFilter;
-		if (m_settings->min1Buttons == 1) minMoveFilter = std::bind(&FilterMoveByBP, _1, 1, 999);
-		else if (m_settings->min1Buttons == 2) minMoveFilter = std::bind(&FilterMoveByBP, _1, 75, 999);
-		else if (m_settings->min1Buttons == 3) minMoveFilter = &FilterMoveByStab;
-		else if (m_settings->min1Buttons == 4) minMoveFilter =
-			std::bind(std::logical_and<bool>(), std::bind(&FilterMoveByBP, _1, 75, 999), std::bind(&FilterMoveByStab, _1, _2));
-		else if (m_settings->trainerMons.trainerMin1Atk) minMoveFilter = std::bind(&FilterMoveByBP, _1, 1, 999);
-		else minMoveFilter = nullptr;
-		tgen.gen.minOneMoveFilter = { minMoveFilter, nullptr, 0 };
-	}
+	TrainerGenerator tgen(m_randContext);
+	tgen.gen.minOneMoveFilter = CreateMin1MoveFilter();
 	auto oldOneMoveFilter = tgen.gen.minOneMoveFilter;
 	tgen.changePokes = m_settings->trainerMons.trainerRandPoke;
 	tgen.usefulItem = m_settings->trainerMons.battleItemsOnly;
@@ -843,10 +826,10 @@ void Randomizer::RandomizeTrainers()
 	tgen.gen.changeHappiness = m_settings->trainerMons.trainerRandHappiness;
 	tgen.gen.changeItem = m_settings->trainerMons.trainerRandItems;
 	tgen.gen.levelDist = m_settings->rentals.randLevelsDist;
-	if (m_settings->trainerMons.trainerRandMovesDetails == 1) {
+	if (m_settings->trainerMons.trainerRandMovesDetails == 0) {
 		tgen.gen.moveRandMove = PokemonGenerator::EqualChance;
 	}
-	else if (m_settings->trainerMons.trainerRandMovesDetails == 2) {
+	else if (m_settings->trainerMons.trainerRandMovesDetails == 1) {
 		tgen.gen.moveRandMove = PokemonGenerator::BasedOnSpeciesBst;
 		tgen.gen.movePowerDist = m_settings->trainerMons.trainerRandRelMovesDetailsDist;
 	}
@@ -907,18 +890,18 @@ void Randomizer::RandomizeTrainers()
 
 		//set trainer specific options
 		if (bIsBoss) {
-			std::function<bool(GameInfo::MoveId, GameInfo::PokemonId)> minMoveFilter;
 			tgen.stayCloseToBST = m_settings->trainerMons.bossStayCloseToBST;
+			auto newFilterFunc = oldOneMoveFilter.func;
 			using namespace std::placeholders;
-			if (minMoveFilter == nullptr) {
-				minMoveFilter = std::bind(FilterMoveByBP, _1, 60, 999);
+			if (oldOneMoveFilter.func == nullptr) {
+				newFilterFunc = [&](GameInfo::MoveId m, GameInfo::PokemonId p) { return FilterMoveByBP(m, 60, 999, m_randContext); };
 			}
 			else {
-				minMoveFilter = std::bind(std::logical_and<bool>(),
-					std::bind(minMoveFilter, _1, _2),
-					std::bind(&FilterMoveByBP, _1, 60, 999));
+				newFilterFunc = [&](GameInfo::MoveId m, GameInfo::PokemonId p) {
+					return oldOneMoveFilter.func(m, p) && FilterMoveByBP(m, 60, 999, m_randContext);
+				};
 			}
-			tgen.gen.minOneMoveFilter = { minMoveFilter, nullptr, 0 };
+			tgen.gen.minOneMoveFilter = { newFilterFunc, oldOneMoveFilter.buffer, oldOneMoveFilter.bufferN };
 		}
 
 		DefTrainer newDef = tgen.Generate(trainer.def);
@@ -1453,4 +1436,30 @@ void Randomizer::SortInjectedData()
 		DoSwaps(rep.buffer, rep.bufferSize);
 	}
 	SetPartialProgress(1.0);
+}
+
+
+PokemonGenerator::Filter<GameInfo::MoveId> Randomizer::CreateMin1MoveFilter() const {
+	using namespace std::placeholders;
+	std::function<bool(GameInfo::MoveId, GameInfo::PokemonId)> minMoveFilter;
+
+	if (m_settings->min1Buttons == 1) {
+		minMoveFilter = [this](GameInfo::MoveId m, GameInfo::PokemonId p) { return FilterMoveByBP(m, 1, 999, m_randContext); };
+	}
+	else if (m_settings->min1Buttons == 2) {
+		minMoveFilter = [this](GameInfo::MoveId m, GameInfo::PokemonId p) { return FilterMoveByBP(m, 75, 999, m_randContext); };
+	}
+	else if (m_settings->min1Buttons == 3) {
+		minMoveFilter = [this](GameInfo::MoveId m, GameInfo::PokemonId p) { return FilterMoveByStab(m, p, m_randContext); };
+	}
+	else if (m_settings->min1Buttons == 4) {
+		minMoveFilter = [this](GameInfo::MoveId m, GameInfo::PokemonId p) { 
+			return FilterMoveByBP(m, 75, 999, m_randContext) && FilterMoveByStab(m, p, m_randContext); 
+		};
+	}
+	else {
+		minMoveFilter = nullptr;
+	}
+	
+	return { minMoveFilter, nullptr, 0 };
 }
