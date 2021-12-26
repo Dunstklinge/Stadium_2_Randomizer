@@ -46,6 +46,29 @@ Randomizer::~Randomizer()
 	delete[] m_customStringsInitInjectCode, m_customStringsInitInjectCode = nullptr;
 }
 
+namespace {
+	class bad_romalloc : public std::exception {
+	private:
+		unsigned romSizeFilled;
+		unsigned romSizeRemaining;
+		unsigned dataRemaining; //not currently calculated and thus not available
+		unsigned failedChunkSize;
+		std::string failedChunkName;
+	public:
+		bad_romalloc(std::string name, unsigned romSizeFilled, unsigned romSizeRemaining,
+			unsigned dataRemaining, unsigned failedChunkSize)
+			: failedChunkName(std::move(name)), romSizeFilled(romSizeFilled),
+			romSizeRemaining(romSizeRemaining), dataRemaining(dataRemaining), failedChunkSize(failedChunkSize)
+		{}
+
+		unsigned RomSizeFilled() const { return romSizeFilled; }
+		unsigned RomSizeRemaining() const { return romSizeRemaining; }
+		unsigned DataRemaining() const { return dataRemaining; }
+		unsigned FailedChunkSize() const { return failedChunkSize; }
+		const std::string& FailedChunkName() const { return failedChunkName; }
+	};
+}
+
 void Randomizer::Randomize(const CString& path, const RandomizationParams& settings, CWnd* owner)
 {
 	Randomizer r(settings);
@@ -53,20 +76,33 @@ void Randomizer::Randomize(const CString& path, const RandomizationParams& setti
 }
 
 
-
-
-void Randomizer::RandomizeRom(const CString & path, CWnd* owner)
+void Randomizer::RandomizeRom(const CString& path, CWnd* owner)
 {
-	m_owner = owner;
-	m_romPath = path;
-	DoSetup();
+	try {
+		m_owner = owner;
+		m_romPath = path;
+		DoSetup();
 
-	AnalyseRom();
+		AnalyseRom();
 
-	RandomizeData();
-	
-	SaveRom();
-	
+		RandomizeData();
+
+		SaveRom();
+	}
+	catch (const bad_romalloc& alloc) {
+		CString name = alloc.FailedChunkName().c_str();
+		CString str;
+		str.Format(TEXT("Failed to randomize rom:\r\n") 
+			TEXT("Could not find enough space inside the rom to accommodate all the custom data. ")
+			TEXT("Please lower space-reducing settings (such as custom trainers, custom rental tables, etc) and try again.")
+			TEXT("\r\n\r\nFailed to insert chunk \"%s\" of size %u.\r\nAt that time, %u bytes of free space were left (%u/%u used).")
+			,
+			name, alloc.FailedChunkSize(), alloc.RomSizeRemaining(), alloc.RomSizeFilled(), 
+			alloc.RomSizeFilled()+alloc.RomSizeRemaining()
+		);
+
+		owner->MessageBox(str, "Failed to generate rom", MB_ICONERROR | MB_OK);
+	}
 	delete[]((uint8_t*)m_romText), m_romText = nullptr;
 	delete[]((uint8_t*)m_romRoster), m_romRoster = nullptr;
 
@@ -613,12 +649,13 @@ void Randomizer::RandomizeHackedRentals()
 		AddRentalSet(tid(5), GenRentalSetAndAdd(POKECUP));
 		AddRentalSet(tid(6),-1); //end it
 	}
-	SetPartialProgress(0.2);
+	SetPartialProgress(0.1);
 	std::vector<unsigned> glcSets;
 	if (m_settings->rentals.multipleGlcRentals) {
 		//Generate n tables
 		for (int i = 0; i < m_settings->rentals.glcTableCount; i++) {
 			glcSets.push_back(GenRentalSetAndAdd(GLC));
+			SetPartialProgress(0.1 + 0.4*(double(i) / m_settings->rentals.glcTableCount));
 		}
 		//we want to spread them evenly, so we randomize the order of gym leader fights
 		//and assign them sequentially (instead of the other way around)
@@ -632,7 +669,7 @@ void Randomizer::RandomizeHackedRentals()
 		}
 		AddRentalSet(tid(29),-1); //end it after rival
 	}
-	SetPartialProgress(0.4);
+	SetPartialProgress(0.5);
 	if (m_settings->rentals.multipleR2Rentals) {
 		if (m_settings->rentals.multiplePokecupRentals) {
 			//pokecups, this time all 4
@@ -650,13 +687,14 @@ void Randomizer::RandomizeHackedRentals()
 		AddRentalSet(tid(33), GenRentalSetAndAdd(LITTLECUP));
 		//primecup r2 has its own allready, so no need for it
 		AddRentalSet(tid(34), -1); //end it
-		SetPartialProgress(0.7);
+		SetPartialProgress(0.55);
 
 		if (m_settings->rentals.multipleGlcRentals) {
 			glcSets.clear();
 			//Generate n tables
 			for (int i = 0; i < m_settings->rentals.glcTableCount; i++) {
 				glcSets.push_back(GenRentalSetAndAdd(GLC));
+				SetPartialProgress(0.55 + 0.4 * (double(i) / m_settings->rentals.glcTableCount));
 			}
 			//we want to spread them evenly, so we randomize the order of gym leader fights
 			//and assign them sequentially (instead of the other way around)
@@ -671,7 +709,7 @@ void Randomizer::RandomizeHackedRentals()
 			AddRentalSet(tid(56),-1); //end it after rival
 		}
 	}
-	SetPartialProgress(0.9);
+	SetPartialProgress(0.95);
 
 	std::sort(m_customRInfoTable.begin(), m_customRInfoTable.end(), [](CustomRosterInfo& lhs, CustomRosterInfo& rhs) -> bool { return lhs.fightMin > rhs.fightMin; });
 	
@@ -1250,7 +1288,7 @@ void Randomizer::SortInjectedData()
 
 	uint32_t offsetIts[_countof(emptySpaces)];
 	for (int i = 0; i < _countof(emptySpaces); i++) offsetIts[i] = emptySpaces[i].offStart;
-	auto AddData = [&](uint8_t* buffer, unsigned int size) {
+	auto AddData = [&](uint8_t* buffer, unsigned int size, std::string chunkName) {
 		//find a free space where it still fits
 		for (int i = 0; i < _countof(offsetIts); i++) {
 			Align(offsetIts[i]);
@@ -1262,10 +1300,20 @@ void Randomizer::SortInjectedData()
 			offsetIts[i] += size;
 			return offset;
 		}
-		throw std::bad_alloc();
+		//could not find an appropriate place
+		m_genLog << "Failed to find enough free space to accomodate genned data:\n";
+		unsigned totalRomSize = 0;
+		unsigned romSizeFilled = 0;
+		for (int i = 0; i < _countof(emptySpaces); i++) {
+			m_genLog << "\t" << offsetIts[i] - emptySpaces[i].offStart << " / " << emptySpaces[i].size << " in space " << i << "\n";
+			totalRomSize += emptySpaces[i].size;
+			romSizeFilled += offsetIts[i] - emptySpaces[i].offStart;
+		}
+		m_genLog << "while trying to accommodate chunk of size " << size << ". Aborting\n";
+		throw bad_romalloc(std::move(chunkName), romSizeFilled, totalRomSize - romSizeFilled, 0, size);
 	};
-	auto AddDataVec = [&](auto& vector) {
-		return AddData((uint8_t*)vector.data(), vector.size() * sizeof(vector[0]));
+	auto AddDataVec = [&](auto& vector, std::string chunkName) {
+		return AddData((uint8_t*)vector.data(), vector.size() * sizeof(vector[0]), std::move(chunkName));
 	};
 
 	//insert code
@@ -1274,7 +1322,7 @@ void Randomizer::SortInjectedData()
 		
 		//our custom code
 		m_customItemInjectCode = InjectedItem::CreateInjection(&size);
-		uint32_t itemCodeAddr = AddData(m_customItemInjectCode, size);
+		uint32_t itemCodeAddr = AddData(m_customItemInjectCode, size, "Custom Item table code injection");
 
 		//the redirect in their code
 		m_customItemRedirectCode = InjectedItem::CreateRedirect(&size);
@@ -1288,7 +1336,7 @@ void Randomizer::SortInjectedData()
 
 		//our custom code
 		m_customRentalInjectCode = InjectedRental::CreateInjection(&size);
-		uint32_t rentalCodeAddr = AddData(m_customRentalInjectCode, size);
+		uint32_t rentalCodeAddr = AddData(m_customRentalInjectCode, size, "Custom rental table code injection");
 
 		//the redirect in their code
 		m_customRentalRedirectCode = InjectedRental::CreateRedirect(&size);
@@ -1302,7 +1350,7 @@ void Randomizer::SortInjectedData()
 
 		//our custom code
 		m_customFaceInjectCode = InjectedFace2::CreateInjection(&size);
-		uint32_t faceCodeAddr = AddData(m_customFaceInjectCode, size);
+		uint32_t faceCodeAddr = AddData(m_customFaceInjectCode, size, "Custom trainer type code injection");
 
 		//the redirect in their code
 		m_customFaceRedirectCode = InjectedFace2::CreateRedirect(&size);
@@ -1315,13 +1363,13 @@ void Randomizer::SortInjectedData()
 
 		//our custom code
 		m_customStringsHelperInjectCode = InjectedStringsHelper::CreateInjection(&size);
-		uint32_t helperAddr = AddData(m_customStringsHelperInjectCode, size);
+		uint32_t helperAddr = AddData(m_customStringsHelperInjectCode, size, "Custom text code injection");
 		m_customStringsInitInjectCode = InjectedStringsInit::CreateInjection(&size);
 		InjectedStringsInit::SetJalHelperAddress(m_customStringsInitInjectCode, helperAddr);
-		uint32_t initAddr = AddData(m_customStringsInitInjectCode, size);
+		uint32_t initAddr = AddData(m_customStringsInitInjectCode, size, "Custom text code injection");
 		m_customStringsGetInjectCode = InjectedStringsGet::CreateInjection(&size);
 		InjectedStringsGet::SetJalHelperAddress(m_customStringsGetInjectCode, helperAddr);
-		uint32_t getAddr = AddData(m_customStringsGetInjectCode, size);
+		uint32_t getAddr = AddData(m_customStringsGetInjectCode, size, "Custom text code injection");
 
 		//the redirect in their code
 		m_customStringsInitRedirectCode = InjectedStringsInit::CreateRedirect(&size);
@@ -1340,22 +1388,22 @@ void Randomizer::SortInjectedData()
 
 	//insert header tables, adjust code
 	if (insertItemData) {
-		m_genItemTableOffset = AddDataVec(m_customIInfoTable);
+		m_genItemTableOffset = AddDataVec(m_customIInfoTable, "Custom item table header");
 		m_genLog << "placed custom item table header at " << m_genItemTableOffset << "\n";
 		InjectedItem::SetInjectionTableAddress(m_customItemInjectCode, m_genItemTableOffset + 0xB0000000);
 	}
 	if (insertRentalData) {
-		m_genRosterTableOffset = AddDataVec(m_customRInfoTable);
+		m_genRosterTableOffset = AddDataVec(m_customRInfoTable, "Custom rental table header");
 		m_genLog << "placed custom rental table header at " << m_genRosterTableOffset << "\n";
 		InjectedRental::SetInjectionTableAddress(m_customRentalInjectCode, m_genRosterTableOffset + 0xB0000000);
 	}
 	if (insertFaceData) {
-		m_genFaceTableOffset = AddDataVec(m_customFInfoTable);
+		m_genFaceTableOffset = AddDataVec(m_customFInfoTable, "Custom image table header");
 		m_genLog << "placed custom face table header at " << m_genFaceTableOffset << "\n";
 		InjectedFace2::SetInjectionTableAddress(m_customFaceInjectCode, m_genFaceTableOffset + 0xB0000000);
 	}
 	if (insertStringData) {
-		m_genStringTableOffset = AddDataVec(m_customStrings.tables);
+		m_genStringTableOffset = AddDataVec(m_customStrings.tables, "Custom text table header");
 		m_genLog << "placed custom face table header at " << m_genStringTableOffset << "\n";
 		InjectedStringsHelper::SetInjectionTableAddress(m_customStringsHelperInjectCode, m_genStringTableOffset + 0xB0000000);
 	}
@@ -1372,7 +1420,7 @@ void Randomizer::SortInjectedData()
 				m_customItemTables[i].resize(oldSize + alignment - alignmentMiss);
 				for (int j = oldSize; j < m_customItemTables[i].size(); j++) m_customItemTables[i][j] = GameInfo::NO_ITEM;
 			}
-			uint32_t romOffset = AddDataVec(m_customItemTables[i]);
+			uint32_t romOffset = AddDataVec(m_customItemTables[i], std::string("custom item table nr. ") + std::to_string(i));
 			//adjust offset in info struct
 			for (auto& info : m_customIInfoTable) {
 				if (info.itemPtr == i) {
@@ -1384,7 +1432,7 @@ void Randomizer::SortInjectedData()
 	}
 	if (insertRentalData) {
 		for (unsigned int i = 0; i < m_customRentalTables.size(); i++) {
-			uint32_t romOffset = AddDataVec(m_customRentalTables[i]);
+			uint32_t romOffset = AddDataVec(m_customRentalTables[i], std::string("custom rental table nr. ") + std::to_string(i));
 			//adjust length and offset based on original table position
 			for (auto& info : m_customRInfoTable) {
 				if (info.rentalOffset == i) {
@@ -1398,7 +1446,7 @@ void Randomizer::SortInjectedData()
 	}
 	if (insertFaceData) {
 		for (int i = 0; i < m_customFaceTable.size(); i++) {
-			uint32_t romOffset = AddDataVec(m_customFaceTable[i]);
+			uint32_t romOffset = AddDataVec(m_customFaceTable[i], std::string("custom image table nr. ") + std::to_string(i));
 			//adjust length and offset bad on original table position
 			m_customFInfoTable[i].faceLength = m_customFaceTable[i].size();
 			m_customFInfoTable[i].faceOffset = romOffset - DefFaces::offStart;
@@ -1407,7 +1455,7 @@ void Randomizer::SortInjectedData()
 	}
 	if (insertStringData) {
 		for (int i = 0; i < m_customStrings.finalizedSinfoTables.size(); i++) {
-			uint32_t romOffset = AddDataVec(m_customStrings.finalizedSinfoTables[i]);
+			uint32_t romOffset = AddDataVec(m_customStrings.finalizedSinfoTables[i], std::string("custom text table nr. ") + std::to_string(i));
 			//adjust length and offset bad on original table position
 			m_customStrings.tables[i].tableOffset = romOffset - m_genStringTableOffset;
 			m_genLog << "placed custom string table nr. " << i << " at " << romOffset << " - " << romOffset + m_customStrings.finalizedSinfoTables[i].size() << "\n";
