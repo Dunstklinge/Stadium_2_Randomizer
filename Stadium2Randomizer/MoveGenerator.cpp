@@ -280,6 +280,7 @@ GameInfo::Move MoveGenerator::Generate(const GameInfo::Move& from, int moveId)
 		if (!fixed) {
 			//try multiple times if more options are available
 			int nTries = randomAcc * 3 + randomPp * 2 + (randomSecondary || randomStatusMoveEffect) * 5 + randomBp * 5;
+			bool changedAcc = false; //only modify accuracy once, this one gets annoying quickly
 			while (nTries-- > 0) {
 				int newRating = RateMove(ret);
 				double changePP = 0, changeBP = 0, changeAcc = 0, changeEffectChance = 0;
@@ -295,10 +296,11 @@ GameInfo::Move MoveGenerator::Generate(const GameInfo::Move& from, int moveId)
 						if (randomPp && ret.pp > 20) {
 							if (ret.pp > 10)
 								changePP = 20;
-							else
+							else if(ret.pp > 2)
 								changePP = 5;
 						}
-						if (randomAcc && ret.accuracy > 200) {
+						if (randomAcc && !changedAcc && ret.accuracy > 200) {
+							changedAcc = true;
 							changeAcc = std::clamp(ret.accuracy - 200, 0, 40);
 						}
 						if (randomBp) {
@@ -307,12 +309,15 @@ GameInfo::Move MoveGenerator::Generate(const GameInfo::Move& from, int moveId)
 					}
 					else/*(strengthen)*/ {
 						if (randomPp && ret.pp < 15) {
-							if (ret.pp > 10)
+							if (ret.pp == 63)
+								changePP = 0;
+							else if (ret.pp > 10)
 								changePP = 10;
-							else
+							else 
 								changePP = (10 - ret.pp) * 10;
 						}
-						if (randomAcc && ret.accuracy < 255) {
+						if (randomAcc && !changedAcc && ret.accuracy < 255) {
+							changedAcc = true;
 							changeAcc = 20;
 						}
 						if (randomBp) {
@@ -324,19 +329,19 @@ GameInfo::Move MoveGenerator::Generate(const GameInfo::Move& from, int moveId)
 					double ifTotal = 0;
 					if (choice < (ifTotal += changePP)) {
 						double changePercent = reduce ? Random::GetDouble(0.6, 0.9) : Random::GetDouble(1.2, 1.5);
-						ret.pp = std::clamp<uint8_t>(ret.pp * changePercent, 2, 63);
+						ret.pp = std::clamp<int>(ret.pp * changePercent, 2, 63);
 					}
 					else if (choice < (ifTotal += changeBP)) {
 						double changePercent = reduce ? Random::GetDouble(0.7, 0.9) : Random::GetDouble(1.2, 2.0);
-						ret.basePower = std::clamp<uint8_t>(ret.basePower * changePercent, 10, 200);
+						ret.basePower = std::clamp<int>(ret.basePower * changePercent, 10, 200);
 					}
 					else if (choice < (ifTotal += changeAcc)) {
-						double changePercent = reduce ? Random::GetDouble(0.7, 0.9) : Random::GetDouble(1.1, 1.4);
-						ret.accuracy = std::clamp<uint8_t>(ret.accuracy * changePercent, 50, 255);
+						double changePercent = reduce ? Random::GetDouble(0.9, 0.99) : Random::GetDouble(1.1, 1.4);
+						ret.accuracy = std::clamp<int>(ret.accuracy * changePercent, 3, 255);
 					}
 					else {
 						double changePercent = reduce ? Random::GetDouble(0.4, 0.9) : Random::GetDouble(1.2, 2.0);
-						ret.effectChance = std::clamp<uint8_t>(ret.effectChance * changePercent, 2, 63);
+						ret.effectChance = std::clamp<int>(ret.effectChance * changePercent, 2, 63);
 					}
 				}
 				else break;

@@ -40,12 +40,12 @@ GameInfo::Pokemon SpeciesGenerator::Generate(int id, const GameInfo::Pokemon& fr
 		}
 	}
 	const Pokemon* preEvo = nullptr;
-	if (dontDecreaseEvolutionBST || dontDecreaseEvolutionStats && PokemonPrevEvo[id] != GameInfo::NO_POKEMON) {
+	if ((dontDecreaseEvolutionBST || dontDecreaseEvolutionStats) && PokemonPrevEvo[id] != GameInfo::NO_POKEMON) {
 		preEvo = &context[PokemonPrevEvo[id] - 1];
 	}
 	if (randomStats) {
 		int bst = ret.CalcBST();
-		if (keepBST) {
+ 		if (keepBST) {
 			//keep it, nothing to do
 		}
 		else if (stayCloseBST) {

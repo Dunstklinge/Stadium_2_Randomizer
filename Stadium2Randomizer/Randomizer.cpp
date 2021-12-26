@@ -496,11 +496,11 @@ void Randomizer::RandomizeSpecies()
 	const auto gen = [&](int i) {
 		auto genimp = [&](int i, auto& rec) {
 			if (monDone[i]) return;
-			if (GameInfo::PokemonPrevEvo[i] != GameInfo::NO_POKEMON) {
-				rec(GameInfo::PokemonPrevEvo[i] - 1, rec);
+			if (GameInfo::PokemonPrevEvo[i+1] != GameInfo::NO_POKEMON) {
+				rec(GameInfo::PokemonPrevEvo[i + 1] - 1, rec);
 			}
 			GameInfo::Pokemon& mon = m_customPokemon[i];
-			mon = speciesGen.Generate(i, mon);
+			mon = speciesGen.Generate(i+1, mon);
 			monDone[i] = true;
 		};
 		genimp(i, genimp);
