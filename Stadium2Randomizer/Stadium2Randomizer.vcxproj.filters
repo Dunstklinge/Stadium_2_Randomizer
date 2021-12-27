@@ -129,6 +129,9 @@
     <ClCompile Include="RandomizationParams.cpp">
       <Filter>GUI</Filter>
     </ClCompile>
+    <ClCompile Include="DefRules.cpp">
+      <Filter>Structures</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DefPokemon.h">
@@ -241,6 +244,9 @@
     </ClInclude>
     <ClInclude Include="json.h" />
     <ClInclude Include="json_fwd.h" />
+    <ClInclude Include="DefRules.h">
+      <Filter>Structures</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="FormatNotes.txt">

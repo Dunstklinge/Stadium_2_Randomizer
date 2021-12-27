@@ -24,6 +24,7 @@ Randomizer::Randomizer(const RandomizationParams& settings) : m_randContext(Defa
 	m_settings = &settings;
 	m_romRoster = nullptr;
 	m_romText = nullptr;
+	m_rules = nullptr;
 }
 
 
@@ -33,6 +34,7 @@ Randomizer::~Randomizer()
 	delete[] m_customPokemon, m_customPokemon = nullptr;
 	delete[](uint8_t*)m_romRoster, m_romRoster = nullptr;
 	delete[](uint8_t*)m_romText, m_romText= nullptr;
+	delete[](uint8_t*)m_rules, m_rules = nullptr;
 	delete[] m_customItemRedirectCode, m_customItemRedirectCode = nullptr;
 	delete[] m_customItemInjectCode, m_customItemInjectCode = nullptr;
 	delete[] m_customRentalRedirectCode, m_customRentalRedirectCode = nullptr;
@@ -246,6 +248,9 @@ void Randomizer::AnalyseRom() {
 	m_romText = DefText::FromFileStream(m_in);
 	DoSwaps(m_romText, DefText::segSize);
 	m_romText->Curate(true);
+	m_rules = DefRules::FromFileStream(m_in);
+	DoSwaps(m_rules, DefText::segSize);
+	m_rules->Curate(true);
 }
 
 void Randomizer::RandomizeData() {
@@ -1275,7 +1280,7 @@ void Randomizer::SortInjectedData()
 	//these are direct copies of rom parts, so these can just be copied
 	m_romRoster->Curate(false);
 	m_romReplacements.emplace_back( RomReplacements{ (uint8_t*)m_romRoster, DefRoster::segSize, DefRoster::offStart });
-	m_romText->Curate(false);;
+	m_romText->Curate(false);
 	m_romReplacements.emplace_back( RomReplacements{ (uint8_t*)m_romText, DefText::segSize, DefText::offStart });
 
 

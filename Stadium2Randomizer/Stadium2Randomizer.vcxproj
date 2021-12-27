@@ -137,6 +137,7 @@
     <ClCompile Include="DefFaces.cpp" />
     <ClCompile Include="DefPokemon.cpp" />
     <ClCompile Include="DefRoster.cpp" />
+    <ClCompile Include="DefRules.cpp" />
     <ClCompile Include="DefText.cpp" />
     <ClCompile Include="DefTrainer.cpp" />
     <ClCompile Include="Filters.cpp" />
@@ -177,6 +178,7 @@
     <ClInclude Include="DefGenTable.h" />
     <ClInclude Include="DefPokemon.h" />
     <ClInclude Include="DefRoster.h" />
+    <ClInclude Include="DefRules.h" />
     <ClInclude Include="DefText.h" />
     <ClInclude Include="DefTrainer.h" />
     <ClInclude Include="Filters.h" />

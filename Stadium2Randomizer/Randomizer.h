@@ -9,6 +9,7 @@
 #include "Constants.h"
 #include "DefRoster.h"
 #include "DefText.h"
+#include "DefRules.h"
 #include "PokemonTable.h"
 #include "MoveTable.h"
 #include "CustomRosterInfo.h"
@@ -69,6 +70,7 @@ private:
 
 	DefRoster* m_romRoster;
 	DefText* m_romText;
+	DefRules* m_rules;
 	GameContext m_randContext;
 
 	//
