@@ -255,10 +255,10 @@ GameInfo::Move MoveGenerator::Generate(const GameInfo::Move& from, int moveId)
 	}
 	if (randomBp && (GameInfo::MoveEffectInfos[ret.effectId].flags & GameInfo::MoveEffectInfo::ATTACK_EFFECT)) {
 		if (stayCloseToBp) {
-			int diff = ret.basePower * 0.1;
-			bpDist.SetMinMax(ret.basePower - diff, ret.basePower + diff);
-			int bp = bpDist(Random::Generator);
-			ret.basePower = ret.basePower + bp;
+			int oldBp = from.basePower;
+			auto scaling = bpDist.GetScaling().CenterAround(oldBp);
+			int bp = bpDist(Random::Generator, scaling);
+			ret.basePower = bp;
 		}
 		else {
 			int bp = bpDist(Random::Generator);

@@ -23,7 +23,6 @@ struct RandomizationParams
 			bool bp;
 			DiscreteDistribution bpDist;
 			static constexpr DistBounds bpDistBounds = { 1, 250 }; //for the freedom to make bonkers op moves
-			DiscreteDistribution bpRelDist;
 			bool closeBp;
 			bool pp;
 			DiscreteDistribution ppDist;

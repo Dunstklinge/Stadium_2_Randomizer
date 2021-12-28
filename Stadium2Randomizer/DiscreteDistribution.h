@@ -21,6 +21,14 @@ public:
 			ret.right = right + (right - left) * amount;
 			return ret;
 		}
+		Scaling CenterAround(double newCenter) {
+			Scaling ret = *this;
+			int currCenter = right - left;
+			double move = newCenter - currCenter;
+			ret.left = left + move;
+			ret.right = right + move;
+			return ret;
+		}
 	private:
 		friend class DiscreteDistribution;
 		double left;

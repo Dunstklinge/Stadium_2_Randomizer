@@ -873,6 +873,10 @@ void Randomizer::RandomizeTrainers()
 		tgen.gen.moveRandMove = PokemonGenerator::EqualChance;
 	}
 	else if (m_settings->trainerMons.trainerRandMovesDetails == 1) {
+		tgen.gen.moveRandMove = PokemonGenerator::UnbiasedDist;
+		tgen.gen.movePowerDist = m_settings->trainerMons.trainerRandRelMovesDetailsDist;
+	}
+	else if (m_settings->trainerMons.trainerRandMovesDetails == 2) {
 		tgen.gen.moveRandMove = PokemonGenerator::BasedOnSpeciesBst;
 		tgen.gen.movePowerDist = m_settings->trainerMons.trainerRandRelMovesDetailsDist;
 	}

@@ -33,7 +33,6 @@
 #define IDC_EDGLCLEVEL                  1032
 #define IDC_CBSPECIESEVIV               1033
 #define IDC_CB_TRAINERPOKE_MIN1ATK      1034
-#define IDC_EDGLCLEVEL2                 1035
 #define IDC_EDGLCTABLECNT               1035
 #define IDC_CBSTAYCLOSETOBST            1036
 #define IDC_CBBOSSSTAYCLOSETOBST        1037
@@ -126,6 +125,8 @@
 #define IDC_SLIDER_4                    1123
 #define IDC_RD_TRAINER_RANDMOVES_STAYCLOSE 1123
 #define IDC_SLIDER_5                    1124
+#define IDC_RD_TRAINER_RANDMOVES_FULLRAND2 1124
+#define IDC_RD_TRAINER_RANDMOVES_FOLLOWDIST 1124
 #define IDC_SPINMIN                     1125
 #define IDC_SPINMAX                     1126
 #define IDC_SPIN_1                      1127

@@ -63,7 +63,7 @@ public:
 	
 	Filter<GameInfo::MoveId> minOneMoveFilter;
 	enum MoveRandMode {
-		EqualChance, BasedOnOldMovePower, BasedOnSpeciesBst
+		EqualChance, UnbiasedDist, BasedOnOldMovePower, BasedOnSpeciesBst
 	} moveRandMove;
 	DiscreteDistribution movePowerDist;
 
@@ -94,8 +94,11 @@ private:
 	void GenHappiness(DefPokemon& mon) const;
 	void GenMoves(DefPokemon& mon) const;
 	void GenItem(DefPokemon& mon) const;
+	void GenMovesFlat(DefPokemon& mon) const;
+	void GenMovesWithBias(DefPokemon& mon, double bias) const;
 	void GenMovesBasedOnOldMovePower(DefPokemon& mon) const;
 	void GenMovesBasedOnSpeciesPower(DefPokemon& mon) const;
+	void GenMovesWithoutBias(DefPokemon& mon) const;
 
 	int PickMoveFromRating(double rating, const std::vector<GameInfo::MoveId>& moves) const;
 
