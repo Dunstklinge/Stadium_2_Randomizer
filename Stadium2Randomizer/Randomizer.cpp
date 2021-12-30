@@ -406,11 +406,11 @@ void Randomizer::RandomizeRegularRentals()
 	pokeGen.statsDist = m_settings->rentals.randRelEvIvDist;
 	pokeGen.levelDist = m_settings->rentals.randLevelsDist;
 	if (m_settings->rentals.randMovesBalanced) {
-		pokeGen.moveRandMove = PokemonGenerator::BasedOnSpeciesBst;
+		pokeGen.moveRandMove = PokemonGenerator::MoveRandMode::BasedOnSpeciesBst;
 		pokeGen.movePowerDist = m_settings->rentals.randRelMovesBalancedDist;
 	}
 	else {
-		pokeGen.moveRandMove = PokemonGenerator::EqualChance;
+		pokeGen.moveRandMove = PokemonGenerator::MoveRandMode::EqualChance;
 	}
 	pokeGen.changeHappiness = m_settings->rentals.randRentalHappiness;
 	pokeGen.minOneMoveFilter = CreateMin1MoveFilter();
@@ -590,11 +590,11 @@ void Randomizer::RandomizeHackedRentals()
 	pokeGen.levelDist = m_settings->rentals.randLevelsDist;
 	pokeGen.changeHappiness = m_settings->rentals.randRentalHappiness;
 	if (m_settings->rentals.randMovesBalanced) {
-		pokeGen.moveRandMove = PokemonGenerator::BasedOnSpeciesBst;
+		pokeGen.moveRandMove = PokemonGenerator::MoveRandMode::BasedOnSpeciesBst;
 		pokeGen.movePowerDist = m_settings->rentals.randRelMovesBalancedDist;
 	}
 	else {
-		pokeGen.moveRandMove = PokemonGenerator::EqualChance;
+		pokeGen.moveRandMove = PokemonGenerator::MoveRandMode::EqualChance;
 	}
 	pokeGen.minOneMoveFilter = CreateMin1MoveFilter();
 
@@ -870,24 +870,33 @@ void Randomizer::RandomizeTrainers()
 	tgen.gen.changeItem = m_settings->trainerMons.trainerRandItems;
 	tgen.gen.levelDist = m_settings->rentals.randLevelsDist;
 	if (m_settings->trainerMons.trainerRandMovesDetails == 0) {
-		tgen.gen.moveRandMove = PokemonGenerator::EqualChance;
+		tgen.gen.moveRandMove = PokemonGenerator::MoveRandMode::EqualChance;
 	}
 	else if (m_settings->trainerMons.trainerRandMovesDetails == 1) {
-		tgen.gen.moveRandMove = PokemonGenerator::UnbiasedDist;
+		tgen.gen.moveRandMove = PokemonGenerator::MoveRandMode::UnbiasedDist;
 		tgen.gen.movePowerDist = m_settings->trainerMons.trainerRandRelMovesDetailsDist;
 	}
 	else if (m_settings->trainerMons.trainerRandMovesDetails == 2) {
-		tgen.gen.moveRandMove = PokemonGenerator::BasedOnSpeciesBst;
+		tgen.gen.moveRandMove = PokemonGenerator::MoveRandMode::BasedOnSpeciesBst;
 		tgen.gen.movePowerDist = m_settings->trainerMons.trainerRandRelMovesDetailsDist;
 	}
 	else {
-		tgen.gen.moveRandMove = PokemonGenerator::BasedOnOldMovePower;
+		tgen.gen.moveRandMove = PokemonGenerator::MoveRandMode::BasedOnOldMovePower;
 		tgen.gen.movePowerDist = m_settings->trainerMons.trainerRandRelMovesDetailsDist;
 	}
+	if (m_settings->trainerMons.speciesUsesBstDist) {
+		if (m_settings->trainerMons.stayCloseToBST) {
+			tgen.gen.speciesRandMode = PokemonGenerator::SpeciesRandMode::BasedOnBst;
+		}
+		else {
+			tgen.gen.speciesRandMode = PokemonGenerator::SpeciesRandMode::UnbiasedDist;
+		}
+		tgen.gen.speciesBstDist = m_settings->trainerMons.speciesBstDist;
+	}
+	else {
+		tgen.gen.speciesRandMode = PokemonGenerator::SpeciesRandMode::EqualChance;
+	}
 	
-	tgen.stayCloseToBST = m_settings->trainerMons.stayCloseToBST;
-	tgen.stayCloseToBSTThreshold = 30;
-
 
 	SetPartialProgress(0.1);
 
@@ -937,7 +946,16 @@ void Randomizer::RandomizeTrainers()
 
 		//set trainer specific options
 		if (bIsBoss) {
-			tgen.stayCloseToBST = m_settings->trainerMons.bossStayCloseToBST;
+			if (m_settings->trainerMons.seperateBossSpeciesDist) {
+				if (m_settings->trainerMons.bossStayCloseToBST) {
+					tgen.gen.speciesRandMode = PokemonGenerator::SpeciesRandMode::BasedOnBst;
+				}
+				else {
+					tgen.gen.speciesRandMode = PokemonGenerator::SpeciesRandMode::UnbiasedDist;
+				}
+				tgen.gen.speciesRandMode = PokemonGenerator::SpeciesRandMode::BasedOnBst;
+				tgen.gen.speciesBstDist = m_settings->trainerMons.bossSpeciesBstDist;
+			}
 			auto newFilterFunc = oldOneMoveFilter.func;
 			using namespace std::placeholders;
 			if (oldOneMoveFilter.func == nullptr) {
@@ -963,7 +981,18 @@ void Randomizer::RandomizeTrainers()
 
 		//restore trainer specific options
 		if (bIsBoss) {
-			tgen.stayCloseToBST = m_settings->trainerMons.stayCloseToBST;
+			if (m_settings->trainerMons.speciesUsesBstDist) {
+				if (m_settings->trainerMons.stayCloseToBST) {
+					tgen.gen.speciesRandMode = PokemonGenerator::SpeciesRandMode::BasedOnBst;
+				}
+				else {
+					tgen.gen.speciesRandMode = PokemonGenerator::SpeciesRandMode::UnbiasedDist;
+				}
+				tgen.gen.speciesBstDist = m_settings->trainerMons.speciesBstDist;
+			}
+			else {
+				tgen.gen.speciesRandMode = PokemonGenerator::SpeciesRandMode::EqualChance;
+			}
 			tgen.gen.minOneMoveFilter = oldOneMoveFilter;
 		}
 		if (m_settings->trainers.mixCustomsInBosses) {

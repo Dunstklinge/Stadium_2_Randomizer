@@ -39,6 +39,7 @@
 #define IDC_CBMORERENTALTABLES          1038
 #define IDC_CBR2RENTALS                 1039
 #define IDC_CBMULTIPLEGLCRENTALS        1040
+#define IDC_CBUSEBSTDIST                1041
 #define IDC_CBCHANGEITEMN               1042
 #define IDC_EDCHANGEITEMN               1043
 #define IDC_CBITEMSPERRENTAL            1044
@@ -47,6 +48,8 @@
 #define IDC_RDYOLONOME                  1046
 #define IDC_COMBO1                      1047
 #define IDC_CBBTYPE                     1047
+#define IDC_CBBOSSSTAYCLOSETOBST2       1047
+#define IDC_CBBOSSESUSEDIFFERENT        1047
 #define IDC_CBLEGALMOVESONLY            1049
 #define IDC_CBSHUFFLEBOSS               1056
 #define IDC_CBSHUFFLEREGULAR            1057
@@ -98,7 +101,9 @@
 #define IDC_STATIC_2                    1107
 #define IDC_CB_TRAINER_RANDMOVES_BTNDIST 1107
 #define IDC_STATIC_3                    1108
+#define IDC_BTNUSEBSTDIST               1108
 #define IDC_STATIC_4                    1109
+#define IDC_BTNBOSSBSTDIST              1109
 #define IDC_STATIC_5                    1110
 #define IDC_EDMIN                       1111
 #define IDC_EDMAX                       1112
@@ -125,7 +130,6 @@
 #define IDC_SLIDER_4                    1123
 #define IDC_RD_TRAINER_RANDMOVES_STAYCLOSE 1123
 #define IDC_SLIDER_5                    1124
-#define IDC_RD_TRAINER_RANDMOVES_FULLRAND2 1124
 #define IDC_RD_TRAINER_RANDMOVES_FOLLOWDIST 1124
 #define IDC_SPINMIN                     1125
 #define IDC_SPINMAX                     1126

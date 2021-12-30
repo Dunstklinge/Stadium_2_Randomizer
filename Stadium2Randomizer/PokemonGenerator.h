@@ -54,6 +54,10 @@ public:
 	
 	//for species only, BOTH filter and buffer are used
 	Filter<GameInfo::PokemonId> speciesFilter;
+	enum class SpeciesRandMode {
+		EqualChance, UnbiasedDist, BasedOnBst
+	} speciesRandMode;
+	DiscreteDistribution speciesBstDist;
 
 	int minLevel;
 	int maxLevel;
@@ -62,12 +66,12 @@ public:
 	Filter<GameInfo::ItemId> itemFilter;
 	
 	Filter<GameInfo::MoveId> minOneMoveFilter;
-	enum MoveRandMode {
+	Filter<GameInfo::MoveId> generalMoveFilter;
+	enum class MoveRandMode {
 		EqualChance, UnbiasedDist, BasedOnOldMovePower, BasedOnSpeciesBst
 	} moveRandMove;
 	DiscreteDistribution movePowerDist;
 
-	Filter<GameInfo::MoveId> generalMoveFilter;
 	
 	bool randEvs;
 	bool randIvs;
@@ -100,7 +104,8 @@ private:
 	void GenMovesBasedOnSpeciesPower(DefPokemon& mon) const;
 	void GenMovesWithoutBias(DefPokemon& mon) const;
 
-	int PickMoveFromRating(double rating, const std::vector<GameInfo::MoveId>& moves) const;
+	template<typename Vec, typename RatingFunctor>
+	int PickBasedOnRating(double rating, const Vec& elems, RatingFunctor functor) const;
 
 	struct Cache {
 		std::vector<GameInfo::PokemonId> species;

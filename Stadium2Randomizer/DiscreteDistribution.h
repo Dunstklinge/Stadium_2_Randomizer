@@ -23,7 +23,7 @@ public:
 		}
 		Scaling CenterAround(double newCenter) {
 			Scaling ret = *this;
-			int currCenter = right - left;
+			int currCenter = (right + left)/2;
 			double move = newCenter - currCenter;
 			ret.left = left + move;
 			ret.right = right + move;

@@ -63,6 +63,7 @@ std::string RandomizationParams::Serialize() {
 		j["rentals"]["multiplePokecupRentals"] = rentals.multiplePokecupRentals;
 		j["rentals"]["multipleR2Rentals"] = rentals.multipleR2Rentals;
 
+		j["trainers"]["trainerRand"] = trainers.trainerRand;
 		j["trainers"]["randName"] = trainers.randName;
 		j["trainers"]["shuffleBosses"] = trainers.shuffleBosses;
 		j["trainers"]["shuffleCross"] = trainers.shuffleCross;
@@ -71,13 +72,16 @@ std::string RandomizationParams::Serialize() {
 		j["trainers"]["mixCustomsInTrainers"] = trainers.mixCustomsInTrainers;
 		j["trainers"]["strCustomTrainerN"] = trainers.strCustomTrainerN;
 
-		j["trainerMons"]["trainerRand"] = trainerMons.trainerRand;
 		j["trainerMons"]["battleItemsOnly"] = trainerMons.battleItemsOnly;
 		j["trainerMons"]["randLevels"] = trainerMons.randLevels;
 		j["trainerMons"]["randMonNames"] = trainerMons.randMonNames;
 		j["trainerMons"]["randSpecies"] = trainerMons.randSpecies;
 		j["trainerMons"]["trainerMin1Atk"] = trainerMons.trainerMin1Atk;
+		j["trainerMons"]["speciesUsesBstDist"] = trainerMons.speciesUsesBstDist;
+		j["trainerMons"]["speciesBstDist"] = trainerMons.speciesBstDist;
 		j["trainerMons"]["stayCloseToBST"] = trainerMons.stayCloseToBST;
+		j["trainerMons"]["seperateBossSpeciesDist"] = trainerMons.seperateBossSpeciesDist;
+		j["trainerMons"]["bossSpeciesBstDist"] = trainerMons.bossSpeciesBstDist;
 		j["trainerMons"]["bossStayCloseToBST"] = trainerMons.bossStayCloseToBST;
 		j["trainerMons"]["trainerRandMoves"] = trainerMons.trainerRandMoves;
 		j["trainerMons"]["trainerRandEvIv"] = trainerMons.trainerRandEvIv;
@@ -154,6 +158,7 @@ bool RandomizationParams::Deserialize(std::string_view obj) {
 		j.at("rentals").at("multiplePokecupRentals").get_to(rentals.multiplePokecupRentals);
 		j.at("rentals").at("multipleR2Rentals").get_to(rentals.multipleR2Rentals);
 
+		j.at("trainers").at("trainerRand").get_to(trainers.trainerRand);
 		j.at("trainers").at("randName").get_to(trainers.randName);
 		j.at("trainers").at("shuffleBosses").get_to(trainers.shuffleBosses);
 		j.at("trainers").at("shuffleCross").get_to(trainers.shuffleCross);
@@ -162,20 +167,23 @@ bool RandomizationParams::Deserialize(std::string_view obj) {
 		j.at("trainers").at("mixCustomsInTrainers").get_to(trainers.mixCustomsInTrainers);
 		j.at("trainers").at("strCustomTrainerN").get_to(trainers.strCustomTrainerN);
 
-		j.at("trainerMons").at("trainerRand").get_to(trainerMons.trainerRand);
+		j.at("trainerMons").at("trainerRandPoke").get_to(trainerMons.trainerRandPoke);
 		j.at("trainerMons").at("battleItemsOnly").get_to(trainerMons.battleItemsOnly);
 		j.at("trainerMons").at("randLevels").get_to(trainerMons.randLevels);
 		j.at("trainerMons").at("randMonNames").get_to(trainerMons.randMonNames);
 		j.at("trainerMons").at("randSpecies").get_to(trainerMons.randSpecies);
 		j.at("trainerMons").at("trainerMin1Atk").get_to(trainerMons.trainerMin1Atk);
+		j.at("trainerMons").at("speciesUsesBstDist").get_to(trainerMons.speciesUsesBstDist);
+		j.at("trainerMons").at("speciesBstDist").get_to(trainerMons.speciesBstDist);
 		j.at("trainerMons").at("stayCloseToBST").get_to(trainerMons.stayCloseToBST);
 		j.at("trainerMons").at("bossStayCloseToBST").get_to(trainerMons.bossStayCloseToBST);
+		j.at("trainerMons").at("seperateBossSpeciesDist").get_to(trainerMons.seperateBossSpeciesDist);
+		j.at("trainerMons").at("bossSpeciesBstDist").get_to(trainerMons.bossSpeciesBstDist);
 		j.at("trainerMons").at("trainerRandMoves").get_to(trainerMons.trainerRandMoves);
 		j.at("trainerMons").at("trainerRandEvIv").get_to(trainerMons.trainerRandEvIv);
 		j.at("trainerMons").at("trainerRandHappiness").get_to(trainerMons.trainerRandHappiness);
 		j.at("trainerMons").at("trainerRandItems").get_to(trainerMons.trainerRandItems);
 		j.at("trainerMons").at("trainerRandIvEvDist").get_to(trainerMons.trainerRandRelIvEvDist);
-		j.at("trainerMons").at("trainerRandPoke").get_to(trainerMons.trainerRandPoke);
 		j.at("trainerMons").at("trainerRandMovesDetails").get_to(trainerMons.trainerRandMovesDetails);
 		j.at("trainerMons").at("trainerRandMovesDetailsDist").get_to(trainerMons.trainerRandRelMovesDetailsDist);
 

@@ -23,6 +23,8 @@ PokemonGenerator::PokemonGenerator(GameContext context) : context(context)
 	maxLevel = 100;
 	levelDist = DiscreteDistribution(0, 100);
 
+	speciesRandMode = SpeciesRandMode::EqualChance;
+
 	moveRandMove = MoveRandMode::EqualChance;
 	movePowerDist = DiscreteDistribution(20, 200);
 
@@ -143,15 +145,81 @@ void PokemonGenerator::RefreshMin1Moves(GameInfo::PokemonId species) const {
 	Refresh(species, minOneMoveFilter, cache.min1Moves, cache.moves.data(), cache.moves.size());
 }
 
+template<typename Vec, typename RatingFunctor>
+int PokemonGenerator::PickBasedOnRating(double rating, const Vec& elems, RatingFunctor ratingOf) const {
+	//we have one big problem: if we simply take the closest element, then some elements will counterintuitively almost
+	//never be chosen, if they are surrounded by moves with almost the same rating (or never if they have the exact same).
+	//however, if we dont do that, we risk violating the given rating distribution.
+	//until i find a good solution, heres the plan for now: 
+	//find the closest element, make a small delta around the rating, pick a uniform random element from the delta.
+	const auto ratingCompare = [&](auto& lhs, double val) {
+		return ratingOf(lhs) < val;
+	};
+
+	//note: "lower bound" is "first element greater or equal". c++ just has stupid names like that
+	auto lowerBound = std::lower_bound(elems.begin(), elems.end(), rating, ratingCompare);
+	int closest = 0;
+	if (lowerBound == elems.end()) {
+		closest = elems.size() - 1;
+	}
+	else if (lowerBound == elems.begin() || ratingOf(*lowerBound) == rating) {
+		//found exact rating: thats our closest
+		closest = lowerBound - elems.begin();
+	}
+	else {
+		//not equal, so it was greater:
+		//compare with element before that, which should be smaller
+		auto smallerValue = lowerBound - 1;
+		double smallerDist = std::abs(ratingOf(*smallerValue) - rating);
+		double greaterDist = std::abs(ratingOf(*lowerBound) - rating);
+		if (smallerDist < greaterDist) {
+			closest = smallerValue - elems.begin();
+		}
+		else {
+			closest = lowerBound - elems.begin();
+		}
+	}
+
+	//find interval between closest
+	const int delta = 5;
+	int start = std::lower_bound(elems.begin(), elems.end(), rating - delta, ratingCompare) - elems.begin();
+	if (start > 0) start--;
+	int end = std::upper_bound(elems.begin(), elems.end(), rating + delta, [&](double val, auto& rhs) {
+			return val < ratingOf(rhs);
+		}
+	) - elems.begin();
+	//interval only contains original move, return that
+	if (start == end) return start;
+	std::uniform_int_distribution<int> dist(start, end - 1);
+	return dist(Random::Generator);
+}
+
 void PokemonGenerator::GenSpecies(DefPokemon & mon) const
 {
-	RefreshSpecies();
-	if (cache.species.size() == 0)
-		return;
-	std::uniform_int_distribution<int> dist(0, cache.species.size()-1);
-	mon.species = cache.species[dist(Random::Generator)];
-	
-	
+	if (speciesRandMode == SpeciesRandMode::EqualChance) {
+		RefreshSpecies();
+		if (cache.species.size() == 0)
+			return;
+		std::uniform_int_distribution<int> dist(0, cache.species.size() - 1);
+		mon.species = cache.species[dist(Random::Generator)];
+	}
+	else {
+		RefreshSpecies();
+		std::sort(cache.species.begin(), cache.species.end(),
+			[&](GameInfo::PokemonId lhs, GameInfo::PokemonId rhs) { return context.Poke(lhs).CalcBST() < context.Poke(rhs).CalcBST(); });
+		double power;
+		if (speciesRandMode == SpeciesRandMode::BasedOnBst) {
+			//we dont use the bias, but simply move the distribution to be centered around the old mons bst
+			double oldBst = DefaultContext.Poke(mon.species).CalcBST();
+			auto scaling = speciesBstDist.GetScaling().CenterAround(oldBst);
+			power = speciesBstDist(Random::Generator, scaling);
+		}
+		else {
+			power = speciesBstDist(Random::Generator);
+		}
+		int index = PickBasedOnRating(power, cache.species, [&](GameInfo::PokemonId id) { return context.Poke(id).CalcBST(); });
+		mon.species = cache.species[index];
+	}
 }
 
 void PokemonGenerator::GenLevel(DefPokemon& mon) const
@@ -222,17 +290,17 @@ void PokemonGenerator::GenHappiness(DefPokemon& mon) const
 void PokemonGenerator::GenMoves(DefPokemon & mon) const
 {
 	switch (moveRandMove) {
-	case EqualChance:
+	case MoveRandMode::EqualChance:
 	default:
 		GenMovesFlat(mon);
 		break;
-	case UnbiasedDist:
+	case MoveRandMode::UnbiasedDist:
 		GenMovesWithoutBias(mon);
 		break;
-	case BasedOnOldMovePower:
+	case MoveRandMode::BasedOnOldMovePower:
 		GenMovesBasedOnOldMovePower(mon);
 		break;
-	case BasedOnSpeciesBst:
+	case MoveRandMode::BasedOnSpeciesBst:
 		GenMovesBasedOnSpeciesPower(mon);
 		break;
 	};
@@ -279,6 +347,7 @@ void PokemonGenerator::GenMovesWithBias(DefPokemon& mon, double bias) const {
 	double minRating = context.LowestMoveRating();
 	double maxRating = context.HighestMoveRating();
 	DiscreteDistribution::Scaling pwrScaling = MovePowerBias({ int(minRating), int(maxRating) }, bias);
+	const auto moveRater = [&](GameInfo::MoveId mid) { return RateMove(context.Move(mid)); };
 
 	RefreshMoves(mon.species);
 
@@ -292,7 +361,7 @@ void PokemonGenerator::GenMovesWithBias(DefPokemon& mon, double bias) const {
 		RefreshMin1Moves(mon.species);
 		if (cache.min1Moves.size() > 0) {
 			double power = movePowerDist(Random::Generator, pwrScaling);
-			int index = PickMoveFromRating(power, cache.min1Moves);
+			int index = PickBasedOnRating(power, cache.min1Moves, moveRater);
 			mon.move1 = cache.min1Moves[index];
 			//remove it from regular moves too. we dont know the index,
 			//so we have to track it when making the min1moves array...
@@ -304,7 +373,7 @@ void PokemonGenerator::GenMovesWithBias(DefPokemon& mon, double bias) const {
 	if (mon.move1 == 0) {
 		if (cache.moves.size() > 0) {
 			double power = movePowerDist(Random::Generator, pwrScaling);
-			int index = PickMoveFromRating(power, cache.moves);
+			int index = PickBasedOnRating(power, cache.moves, moveRater);
 			mon.move1 = cache.moves[index];
 			cache.moves.erase(cache.moves.begin() + index);
 		}
@@ -312,19 +381,19 @@ void PokemonGenerator::GenMovesWithBias(DefPokemon& mon, double bias) const {
 
 	if (cache.moves.size() < 1) return;
 	double power = movePowerDist(Random::Generator, pwrScaling);
-	int index = PickMoveFromRating(power, cache.moves);
+	int index = PickBasedOnRating(power, cache.moves, moveRater);
 	mon.move2 = cache.moves[index];
 	cache.moves.erase(cache.moves.begin() + index);
 
 	if (cache.moves.size() < 1) return;
 	power = movePowerDist(Random::Generator, pwrScaling);
-	index = PickMoveFromRating(power, cache.moves);
+	index = PickBasedOnRating(power, cache.moves, moveRater);
 	mon.move3 = cache.moves[index];
 	cache.moves.erase(cache.moves.begin() + index);
 
 	if (cache.moves.size() < 1) return;
 	power = movePowerDist(Random::Generator, pwrScaling);
-	index = PickMoveFromRating(power, cache.moves);
+	index = PickBasedOnRating(power, cache.moves, moveRater);
 	mon.move4 = cache.moves[index];
 	cache.moves.erase(cache.moves.begin() + index);
 }
@@ -349,41 +418,6 @@ void PokemonGenerator::GenMovesBasedOnSpeciesPower(DefPokemon& mon) const {
 
 void PokemonGenerator::GenMovesWithoutBias(DefPokemon& mon) const {
 	GenMovesWithBias(mon, 0);
-}
-
-int PokemonGenerator::PickMoveFromRating(double rating, const std::vector<GameInfo::MoveId>& moves) const {
-	//we have one big problem: if we simply take the closest element, then some elements will counterintuitively almost
-	//never be chosen, if they are surrounded by moves with almost the same rating (or never if they have the exact same).
-	//however, if we put dont do that, we risk violating the given rating distribution.
-	//until i find a good solution, heres the plan for now: make a small delta round the rating, pick a uniform random element from the delta.
-	const double delta = 10;
-	int start, end;
-	int closest = 0; double closestRating = RateMove(context.Move(moves[0]));
-	for (start = 0; start < moves.size(); start++) {
-		double moveRating = RateMove(context.Move(moves[start]));
-		if (std::abs(moveRating - rating) < std::abs(closestRating - rating)) {
-			closest = start;
-			closestRating = moveRating;
-		}
-		if (moveRating > rating-delta) break;
-	}
-	for (end = start; end < moves.size(); end++) {
-		double moveRating = RateMove(context.Move(moves[end]));
-		if (std::abs(moveRating - rating) < std::abs(closestRating - rating)) {
-			closest = end;
-			closestRating = moveRating;
-		}
-		if (moveRating > rating - delta) break;
-	}
-	if (end - start == 1) {
-		return start;
-	}
-	else if (end - start <= 0) {
-		//pick closest instead
-		return closest;
-	}
-	std::uniform_int_distribution<int> dist(start, end - 1);
-	return dist(Random::Generator);
 }
 
 void PokemonGenerator::GenItem(DefPokemon & mon) const

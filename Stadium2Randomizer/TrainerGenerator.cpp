@@ -24,8 +24,6 @@ TrainerGenerator::TrainerGenerator(GameContext context) : context(context), gen(
 	gen.bstEvIvs = false;
 
 	usefulItem = false;
-	stayCloseToBST = true;
-	stayCloseToBSTThreshold = 50;
 	//minOneMove = NONE;
 }
 
@@ -92,15 +90,10 @@ DefTrainer TrainerGenerator::Generate(const DefTrainer & from)
 
 			//to prevent doubles, we generate a viable pokemon array manually from both their buffer and our filter
 			//and ignore previous pokemon
-			SatUAr oldBst = DefaultContext.Poke(ret.pokemon[i].species).CalcBST(); //Note: itentionally take the ORIGINAL pokemon info here
-			unsigned int minBst = oldBst - stayCloseToBSTThreshold;
-			unsigned int maxBst = oldBst + stayCloseToBSTThreshold;
-			
 			auto oldFilterFunc = gen.speciesFilter.func;
 
 			gen.speciesFilter.func = [&](GameInfo::PokemonId pid) {
 				if (oldFilterFunc && !oldFilterFunc(pid)) return false;
-				if (stayCloseToBST && !FilterPokemonByBST(pid, minBst, maxBst, context)) return false;
 				for (int k = 0; k < i; k++) {
 					if (ret.pokemon[k].species == pid) {
 						return false;

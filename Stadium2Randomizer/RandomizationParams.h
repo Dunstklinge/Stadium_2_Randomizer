@@ -40,7 +40,7 @@ struct RandomizationParams
 		struct Species {
 			bool randomizeBst;
 			DiscreteDistribution bstDist;
-			static constexpr DistBounds bstDistBounds = { 50, 1000 }; //for the freedom to make bonkers op mons
+			static constexpr DistBounds bstDistBounds = { 0, 1000 }; //for the freedom to make bonkers op mons
 			bool evoBst;
 			bool evoStats;
 			enum {
@@ -86,6 +86,7 @@ struct RandomizationParams
 	Rentals rentals;
 
 	struct Trainers {
+		bool trainerRand;
 		bool randName;
 		bool shuffleBosses;
 		bool shuffleCross;
@@ -96,20 +97,24 @@ struct RandomizationParams
 	} trainers;
 
 	struct TrainerMons {
-		bool trainerRand;
+		bool trainerRandPoke;
 		bool battleItemsOnly;
 		bool randLevels;
 		bool randMonNames;
 		bool randSpecies;
 		bool trainerMin1Atk;
+		bool speciesUsesBstDist;
+		DiscreteDistribution speciesBstDist;
+		static constexpr DistBounds speciesBstBounds = { 0, 1000 }; //for the freedom to make bonkers op mons
 		bool stayCloseToBST;
+		bool seperateBossSpeciesDist;
+		DiscreteDistribution bossSpeciesBstDist;
 		bool bossStayCloseToBST;
 		bool trainerRandMoves;
 		bool trainerRandEvIv;
 		bool trainerRandHappiness;
 		bool trainerRandItems;
 		DiscreteDistribution  trainerRandRelIvEvDist;
-		bool trainerRandPoke;
 		int trainerRandMovesDetails;
 		DiscreteDistribution  trainerRandRelMovesDetailsDist;
 	} trainerMons;
