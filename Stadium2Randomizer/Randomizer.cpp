@@ -273,9 +273,12 @@ void Randomizer::RandomizeData() {
 		RandomizeHackedRentals();
 	}
 
-	m_progressPartMinPercent = 0.5;
-	m_progressPartMaxPercent = 0.9;
-	RandomizeTrainers();
+
+	if (m_settings->trainers.trainerRand || m_settings->trainerMons.trainerRandPoke) {
+		m_progressPartMinPercent = 0.5;
+		m_progressPartMaxPercent = 0.9;
+		RandomizeTrainers();
+	}
 
 	m_progressPartMinPercent = 0.9;
 	m_progressPartMaxPercent = 0.9;
@@ -794,7 +797,7 @@ void Randomizer::RandomizeTrainers()
 						shuffleBosses[round].push_back(trainerList.size() - 1);
 					}
 				}
-				
+
 				//
 				//custom replacement data
 				if (m_settings->trainers.mixCustomsInBosses || m_settings->trainers.mixCustomsInTrainers) {
@@ -832,7 +835,7 @@ void Randomizer::RandomizeTrainers()
 	auto shuffleArr = [&](std::vector<int>& ts) {
 		int size = ts.size();
 		for (int i = 0; i < size - 1; i++) {
-			int shuffleIndex = Random::GetInt(i, size-1);
+			int shuffleIndex = Random::GetInt(i, size - 1);
 			using namespace std;
 			swap(trainerList[ts[i]].def.trainerId, trainerList[ts[shuffleIndex]].def.trainerId);
 			swap(trainerList[ts[i]].def.trainerCat, trainerList[ts[shuffleIndex]].def.trainerCat);
@@ -853,15 +856,19 @@ void Randomizer::RandomizeTrainers()
 	// set up trainer generator
 	//
 	TrainerGenerator tgen(m_randContext);
-	tgen.gen.minOneMoveFilter = CreateMin1MoveFilter();
 	auto oldOneMoveFilter = tgen.gen.minOneMoveFilter;
+	if (m_settings->trainers.trainerRand) {
+		tgen.changeName = m_settings->trainers.randName;
+	}
+	else {
+		tgen.changeName = false;
+	}
+	tgen.changePokemonNicknames = m_settings->trainerMons.randMonNames;
 	tgen.changePokes = m_settings->trainerMons.trainerRandPoke;
 	tgen.usefulItem = m_settings->trainerMons.battleItemsOnly;
 	tgen.gen.changeLevel = m_settings->trainerMons.randLevels;
 	tgen.gen.changeSpecies = m_settings->trainerMons.randSpecies;
 	tgen.gen.changeMoves = m_settings->trainerMons.trainerRandMoves;
-	tgen.changeName = m_settings->trainers.randName;
-	tgen.changePokemonNicknames = m_settings->trainerMons.randMonNames;
 	tgen.gen.changeEvsIvs = m_settings->trainerMons.trainerRandEvIv;
 	tgen.gen.randEvs = m_settings->trainerMons.trainerRandEvIv;
 	tgen.gen.randIvs = m_settings->trainerMons.trainerRandEvIv;
@@ -869,6 +876,7 @@ void Randomizer::RandomizeTrainers()
 	tgen.gen.changeHappiness = m_settings->trainerMons.trainerRandHappiness;
 	tgen.gen.changeItem = m_settings->trainerMons.trainerRandItems;
 	tgen.gen.levelDist = m_settings->rentals.randLevelsDist;
+	tgen.gen.minOneMoveFilter = CreateMin1MoveFilter();
 	if (m_settings->trainerMons.trainerRandMovesDetails == 0) {
 		tgen.gen.moveRandMove = PokemonGenerator::MoveRandMode::EqualChance;
 	}
@@ -896,7 +904,7 @@ void Randomizer::RandomizeTrainers()
 	else {
 		tgen.gen.speciesRandMode = PokemonGenerator::SpeciesRandMode::EqualChance;
 	}
-	
+
 
 	SetPartialProgress(0.1);
 
@@ -1001,117 +1009,119 @@ void Randomizer::RandomizeTrainers()
 
 		newDef.Print(m_romText, m_genLog);
 		m_genLog << "\n";
-		
+
 
 		SetPartialProgress(0.1 + (i - 1) * (0.8 / trainerList.size()));
 	}
 
-	
+
 
 	//
 	// shuffle in custom trainers if reqeusted
 	//
-	int maxCustomTrainers = min(m_settings->trainers.strCustomTrainerN, GlobalConfig::CustomTrainers.customTrainers.size());
-	std::vector<int> possibleCustomTrainers;
-	possibleCustomTrainers.reserve(maxCustomTrainers);
-	if (m_settings->trainers.mixCustomsInBosses || m_settings->trainers.mixCustomsInTrainers) {
-		//determine which trainers to shuffle in
-		for (int i = 0; i < maxCustomTrainers; i++) {
-			int customN = GlobalConfig::CustomTrainers.customTrainers.size();
-			int usedN = possibleCustomTrainers.size();
-			//get unused trainer id (adjust random number)
-			int randomIndex = Random::GetInt(0, customN - usedN - 1);
-			for (int i = 0; i < usedN; i++) {
-				if (possibleCustomTrainers[i] == randomIndex) randomIndex++;
-				else break;
+	if (m_settings->trainers.trainerRand) {
+		int maxCustomTrainers = min(m_settings->trainers.strCustomTrainerN, GlobalConfig::CustomTrainers.customTrainers.size());
+		std::vector<int> possibleCustomTrainers;
+		possibleCustomTrainers.reserve(maxCustomTrainers);
+		if (m_settings->trainers.mixCustomsInBosses || m_settings->trainers.mixCustomsInTrainers) {
+			//determine which trainers to shuffle in
+			for (int i = 0; i < maxCustomTrainers; i++) {
+				int customN = GlobalConfig::CustomTrainers.customTrainers.size();
+				int usedN = possibleCustomTrainers.size();
+				//get unused trainer id (adjust random number)
+				int randomIndex = Random::GetInt(0, customN - usedN - 1);
+				for (int i = 0; i < usedN; i++) {
+					if (possibleCustomTrainers[i] == randomIndex) randomIndex++;
+					else break;
+				}
+				possibleCustomTrainers.push_back(randomIndex);
 			}
-			possibleCustomTrainers.push_back(randomIndex);
-		}
-		auto shuffleInCustom = [&, this](std::vector<int>& vec) {
-			int nCustoms = 0;
-			for (int i = 0; i < vec.size(); i++) {
-				TrainerInfo& trainer = trainerList[vec[i]];
-				int nLeft = vec.size() - 1 - i;
-				int nCustomsLeft = possibleCustomTrainers.size() - nCustoms;
-				if (Random::GetInt(0, nLeft + nCustomsLeft) > nLeft) {
-					auto customTrainer = GlobalConfig::CustomTrainers.GenPermutation(possibleCustomTrainers[nCustoms], customFaceList);
-					m_customStrings.AddStringOverride(TableInfo::TEXT_TRAINER_NAMES, 110 + nCustoms - 1, customTrainer.name); //-1 as they are 1 based
-					int oldId = trainer.def.trainerId;
-					trainer.def.trainerId = 110 + nCustoms;
-					for (int i = 0; i < 40; i++) {
-						if (customTrainer.textLines[i].size() > 0) {
-							customTrainerTextMods.AddChange(TableInfo::TEXT_TRAINER_TEXT_FIRST + trainer.def.textId,
-								i, customTrainer.textLines[i]);
+			auto shuffleInCustom = [&, this](std::vector<int>& vec) {
+				int nCustoms = 0;
+				for (int i = 0; i < vec.size(); i++) {
+					TrainerInfo& trainer = trainerList[vec[i]];
+					int nLeft = vec.size() - 1 - i;
+					int nCustomsLeft = possibleCustomTrainers.size() - nCustoms;
+					if (Random::GetInt(0, nLeft + nCustomsLeft) > nLeft) {
+						auto customTrainer = GlobalConfig::CustomTrainers.GenPermutation(possibleCustomTrainers[nCustoms], customFaceList);
+						m_customStrings.AddStringOverride(TableInfo::TEXT_TRAINER_NAMES, 110 + nCustoms - 1, customTrainer.name); //-1 as they are 1 based
+						int oldId = trainer.def.trainerId;
+						trainer.def.trainerId = 110 + nCustoms;
+						for (int i = 0; i < 40; i++) {
+							if (customTrainer.textLines[i].size() > 0) {
+								customTrainerTextMods.AddChange(TableInfo::TEXT_TRAINER_TEXT_FIRST + trainer.def.textId,
+									i, customTrainer.textLines[i]);
+							}
 						}
-					}
 
-					m_genLog << "shuffling trainer " << oldId << " with custom trainer " << customTrainer.name << "\r\n";
-					nCustoms++;
+						m_genLog << "shuffling trainer " << oldId << " with custom trainer " << customTrainer.name << "\r\n";
+						nCustoms++;
+					}
+				}
+			};
+			shuffleInCustom(shuffleInCustoms[0]);
+			shuffleInCustom(shuffleInCustoms[1]);
+		}
+
+		//
+		// build portrait list of used custom trainers
+		//
+		m_customFInfoTable.resize(customFaceList.size());
+		m_customFaceTable.resize(customFaceList.size());
+
+		for (int i = 0; i < customFaceList.size(); i++) {
+			//build Faces struct in vector (which is uint8 buffer)
+			auto& face = customFaceList[i];
+			m_customFaceTable[i].reserve((4 + face.size() * (4 + 8 + 64 * 64 * 2)) + 0xF & ~0xF); //estimate size
+			uint32_t totalSize = 4 + face.size() * 4; //nFaces and offsets
+			m_customFaceTable[i].resize(totalSize);
+			DefFaces::Faces* faces = (DefFaces::Faces*)m_customFaceTable[i].data();
+			faces->nFaces = face.size();
+			if (faces->nFaces > 3) {
+				throw std::exception("faces can only have up to 3 expressions!");
+			}
+			for (int j = 0; j < face.size(); j++) {
+				CImage img;
+				HRESULT res = img.Load(face[j].c_str());
+				if (res != S_OK) {
+					int error = GetLastError();
+					std::stringstream errorMsg;
+					errorMsg << "Could not load image file " << face[j] << "; error " << error;
+					throw std::invalid_argument(errorMsg.str());
+				}
+				else {
+					uint32_t oldSize = totalSize;
+					totalSize += 8 + img.GetWidth() * img.GetHeight() * 2;
+					m_customFaceTable[i].resize(totalSize);
+					DefFaces::Faces::Face* face = (DefFaces::Faces::Face*)(m_customFaceTable[i].data() + oldSize);
+					faces = (DefFaces::Faces*)m_customFaceTable[i].data();
+					faces->offsets[j] = oldSize + 8; //this offset points to pixels for some reason
+					face->width = img.GetWidth();
+					face->height = img.GetHeight();
+					face->width = 64;
+					face->height = 64;
+					face->unknown = 0x20000;
+					face->SetPixelsFromImage(img);
 				}
 			}
-		};
-		shuffleInCustom(shuffleInCustoms[0]);
-		shuffleInCustom(shuffleInCustoms[1]);
-	}
-
-	//
-	// build portrait list of used custom trainers
-	//
-	m_customFInfoTable.resize(customFaceList.size());
-	m_customFaceTable.resize(customFaceList.size());
-
-	for (int i = 0; i < customFaceList.size(); i++) {
-		//build Faces struct in vector (which is uint8 buffer)
-		auto& face = customFaceList[i];
-		m_customFaceTable[i].reserve((4 + face.size() * (4 + 8 + 64 * 64 * 2)) + 0xF & ~0xF); //estimate size
-		uint32_t totalSize = 4 + face.size() * 4; //nFaces and offsets
-		m_customFaceTable[i].resize(totalSize);
-		DefFaces::Faces* faces = (DefFaces::Faces*)m_customFaceTable[i].data();
-		faces->nFaces = face.size();
-		if (faces->nFaces > 3) {
-			throw std::exception("faces can only have up to 3 expressions!");
+			//align to 0x10 border
+			m_customFaceTable[i].resize(totalSize + 0xF & ~0xF);
 		}
-		for (int j = 0; j < face.size(); j++) {
-			CImage img;
-			HRESULT res = img.Load(face[j].c_str());
-			if (res != S_OK) {
-				int error = GetLastError();
-				std::stringstream errorMsg;
-				errorMsg << "Could not load image file " << face[j] << "; error " << error;
-				throw std::invalid_argument(errorMsg.str());
-			}
-			else {
-				uint32_t oldSize = totalSize;
-				totalSize += 8 + img.GetWidth()*img.GetHeight() * 2;
-				m_customFaceTable[i].resize(totalSize);
-				DefFaces::Faces::Face* face = (DefFaces::Faces::Face*)(m_customFaceTable[i].data() + oldSize);
-				faces = (DefFaces::Faces*)m_customFaceTable[i].data();
-				faces->offsets[j] = oldSize + 8; //this offset points to pixels for some reason
-				face->width = img.GetWidth();
-				face->height = img.GetHeight();
-				face->width = 64;
-				face->height = 64;
-				face->unknown = 0x20000;
-				face->SetPixelsFromImage(img);
-			}
+
+		m_genLog << "... generating trainers done!\n";
+
+		//
+		//apply text changes
+		//
+		DefText* newText = (DefText*)new uint8_t[DefText::segSize];
+		if (customTrainerTextMods.changes.size() > 0) {
+			customTrainerTextMods.Add(tgen.textChanges);
+			tgen.textChanges = customTrainerTextMods;
 		}
-		//align to 0x10 border
-		m_customFaceTable[i].resize(totalSize + 0xF & ~0xF);
+		tgen.textChanges.Apply(m_romText, newText);
+		memcpy(m_romText, newText, DefText::segSize);
+		delete[]((uint8_t*)newText);
 	}
-
-	m_genLog << "... generating trainers done!\n";
-
-	//
-	//apply text changes
-	//
-	DefText* newText = (DefText*)new uint8_t[DefText::segSize];
-	if (customTrainerTextMods.changes.size() > 0) {
-		customTrainerTextMods.Add(tgen.textChanges);
-		tgen.textChanges = customTrainerTextMods;
-	}
-	tgen.textChanges.Apply(m_romText, newText);
-	memcpy(m_romText, newText, DefText::segSize);
-	delete[]((uint8_t*)newText);
 
 	SetPartialProgress(1.0);
 }
